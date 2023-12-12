@@ -321,13 +321,22 @@ fn create_frost_signing_shares_from_bytes<C: Ciphersuite>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::*;
 
-    #[test]
-    fn test_round1() {
+    #[rstest]
+    #[case(FrostScheme::Ed25519Sha512, 32)]
+    #[case(FrostScheme::Ristretto25519Sha512, 32)]
+    #[case(FrostScheme::Ed448Shake256, 56)]
+    #[case(FrostScheme::P256Sha256, 32)]
+    #[case(FrostScheme::K256Sha256, 32)]
+    #[case(FrostScheme::P384Sha384, 48)]
+    fn test_pregenerate(#[case] scheme: FrostScheme, #[case] length: usize) {
         let mut rng = rand::rngs::OsRng;
-        let secret = SigningShare(vec![1u8; 32]);
-        let (signing_nonces, signing_commitments) = FrostScheme::Ed25519Sha512
-            .round1(&secret, &mut rng)
+        let secret = SigningShare(vec![1u8; length]);
+        let (signing_nonces, signing_commitments) = scheme
+            .pregenerate_signing_nonces(NonZeroU8::new(200).unwrap(), &secret, &mut rng)
             .unwrap();
+        assert_eq!(signing_nonces.len(), 200);
+        assert_eq!(signing_commitments.len(), 200);
     }
 }

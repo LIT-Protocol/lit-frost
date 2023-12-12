@@ -77,3 +77,27 @@ impl From<&curve25519_dalek::Scalar> for SigningShare {
         Self(s.to_bytes().to_vec())
     }
 }
+
+impl From<ed448_goldilocks::Scalar> for SigningShare {
+    fn from(s: ed448_goldilocks::Scalar) -> Self {
+        Self::from(&s)
+    }
+}
+
+impl From<&ed448_goldilocks::Scalar> for SigningShare {
+    fn from(s: &ed448_goldilocks::Scalar) -> Self {
+        Self(s.to_bytes().to_vec())
+    }
+}
+
+impl From<vsss_rs::curve25519::WrappedScalar> for SigningShare {
+    fn from(s: vsss_rs::curve25519::WrappedScalar) -> Self {
+        Self::from(&s)
+    }
+}
+
+impl From<&vsss_rs::curve25519::WrappedScalar> for SigningShare {
+    fn from(s: &vsss_rs::curve25519::WrappedScalar) -> Self {
+        Self::from(&s.0)
+    }
+}

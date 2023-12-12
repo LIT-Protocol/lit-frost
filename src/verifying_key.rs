@@ -119,3 +119,39 @@ impl From<&p384::ProjectivePoint> for VerifyingKey {
         Self(s.to_encoded_point(true).as_bytes().to_vec())
     }
 }
+
+impl From<ed448_goldilocks::curve::edwards::CompressedEdwardsY> for VerifyingKey {
+    fn from(s: ed448_goldilocks::curve::edwards::CompressedEdwardsY) -> Self {
+        Self::from(&s)
+    }
+}
+
+impl From<&ed448_goldilocks::curve::edwards::CompressedEdwardsY> for VerifyingKey {
+    fn from(s: &ed448_goldilocks::curve::edwards::CompressedEdwardsY) -> Self {
+        Self(s.0.to_vec())
+    }
+}
+
+impl From<ed448_goldilocks::curve::edwards::ExtendedPoint> for VerifyingKey {
+    fn from(s: ed448_goldilocks::curve::edwards::ExtendedPoint) -> Self {
+        Self::from(&s)
+    }
+}
+
+impl From<&ed448_goldilocks::curve::edwards::ExtendedPoint> for VerifyingKey {
+    fn from(s: &ed448_goldilocks::curve::edwards::ExtendedPoint) -> Self {
+        Self(s.compress().0.to_vec())
+    }
+}
+
+impl From<vsss_rs::curve25519::WrappedEdwards> for VerifyingKey {
+    fn from(s: vsss_rs::curve25519::WrappedEdwards) -> Self {
+        Self::from(&s)
+    }
+}
+
+impl From<&vsss_rs::curve25519::WrappedEdwards> for VerifyingKey {
+    fn from(s: &vsss_rs::curve25519::WrappedEdwards) -> Self {
+        Self::from(&s.0)
+    }
+}
