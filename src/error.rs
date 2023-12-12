@@ -6,18 +6,6 @@ pub enum Error {
     /// Verifiable secret sharing scheme errors
     #[error("Vsss error: {0}")]
     Vsss(vsss_rs::Error),
-    // #[error("Ed25519 Frost error: {0}")]
-    // Ed25519(#[from] frost_ed25519::Error),
-    // #[error("Ed448 Frost error: {0}")]
-    // Ed448(#[from] frost_ed448::Error),
-    // #[error("Ristretto25519 Frost error: {0}")]
-    // Ristretto25519(#[from] frost_ristretto255::Error),
-    // #[error("K256 Frost error: {0}")]
-    // K256(#[from] frost_secp256k1::Error),
-    // #[error("P256 Frost error: {0}")]
-    // P256(#[from] frost_p256::Error),
-    // #[error("P384 Frost error: {0}")]
-    // P384(#[from] crate::p384::Error),
     #[error("Error: {0}")]
     General(String),
 }
