@@ -12,8 +12,11 @@ use serde::{
 /// re-using nonces will result in leakage of a signer’s long-lived signing key.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
 pub struct SigningNonces {
+    /// The ciphersuite used for the signing nonces
     pub scheme: Scheme,
+    /// The hiding nonce
     pub hiding: Vec<u8>,
+    /// The binding nonce
     pub binding: Vec<u8>,
 }
 

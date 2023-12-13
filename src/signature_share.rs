@@ -9,7 +9,9 @@ use serde::{
 /// A participant’s signature share, which is aggregated with all other signer’s shares into the joint signature.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
 pub struct SignatureShare {
+    /// The ciphersuite used to create this signature share.
     pub scheme: Scheme,
+    /// The signature share value.
     pub value: Vec<u8>,
 }
 

@@ -9,7 +9,9 @@ use serde::{
 /// A Schnorr signature
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
 pub struct Signature {
+    /// The signature scheme
     pub scheme: Scheme,
+    /// The signature value
     pub value: Vec<u8>,
 }
 

@@ -6,9 +6,13 @@ use std::num::NonZeroU8;
 /// The frost keys used for signing generated during the DKG.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Deserialize, Serialize)]
 pub struct KeyPackage {
+    /// The identifier of the participant.
     pub identifier: ParticipantIdentifier,
+    /// The secret share of the participant.
     pub secret_share: SigningShare,
+    /// The public key of the group.
     pub verifying_key: VerifyingKey,
+    /// The threshold of the group.
     pub threshold: NonZeroU8,
 }
 
@@ -46,21 +50,5 @@ impl<C: Ciphersuite> TryFrom<&KeyPackage> for frost_core::keys::KeyPackage<C> {
             threshold as u16,
         );
         Ok(key_package)
-    }
-}
-
-impl KeyPackage {
-    pub fn new(
-        identifier: ParticipantIdentifier,
-        secret_share: SigningShare,
-        group_public: VerifyingKey,
-        threshold: NonZeroU8,
-    ) -> Self {
-        Self {
-            identifier,
-            secret_share,
-            verifying_key: group_public,
-            threshold,
-        }
     }
 }

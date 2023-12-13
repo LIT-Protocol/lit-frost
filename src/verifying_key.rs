@@ -9,7 +9,9 @@ use serde::{
 /// A valid verifying key for Schnorr signatures
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
 pub struct VerifyingKey {
+    /// The scheme used by this verifying key
     pub scheme: Scheme,
+    /// The value of the verifying key
     pub value: Vec<u8>,
 }
 

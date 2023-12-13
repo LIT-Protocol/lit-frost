@@ -496,10 +496,13 @@ mod tests {
     #[case(Scheme::Ed448Shake256, 57)]
     fn pregenerate(#[case] scheme: Scheme, #[case] length: usize) {
         let mut rng = rand::rngs::OsRng;
-        let mut secret = SigningShare(vec![1u8; length]);
+        let mut secret = SigningShare {
+            scheme,
+            value: vec![1u8; length]
+        };
         // Clear the high bits
-        secret.0[length - 1] = 0;
-        secret.0[length - 2] = 0;
+        secret.value[length - 1] = 0;
+        secret.value[length - 2] = 0;
         let (signing_nonces, signing_commitments) = scheme
             .pregenerate_signing_nonces(NonZeroU8::new(200).unwrap(), &secret, &mut rng)
             .unwrap();

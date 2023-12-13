@@ -12,7 +12,9 @@ use serde::{
 /// Each [`SigningCommitments`] can be used for exactly one signature.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
 pub struct SigningCommitments {
+    /// The ciphersuite used for this signing commitment.
     pub scheme: Scheme,
+    /// The serialized signing commitment.
     pub value: Vec<u8>,
 }
 
