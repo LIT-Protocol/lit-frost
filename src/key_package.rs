@@ -8,7 +8,7 @@ use std::num::NonZeroU8;
 pub struct KeyPackage {
     pub identifier: ParticipantIdentifier,
     pub secret_share: SigningShare,
-    pub group_public: VerifyingKey,
+    pub verifying_key: VerifyingKey,
     pub threshold: NonZeroU8,
 }
 
@@ -23,7 +23,7 @@ impl<C: Ciphersuite> From<&frost_core::keys::KeyPackage<C>> for KeyPackage {
         Self {
             identifier: s.identifier().into(),
             secret_share: s.signing_share().into(),
-            group_public: s.verifying_key().into(),
+            verifying_key: s.verifying_key().into(),
             threshold: NonZeroU8::new(*s.min_signers() as u8).unwrap(),
         }
     }
@@ -33,10 +33,10 @@ impl<C: Ciphersuite> TryFrom<&KeyPackage> for frost_core::keys::KeyPackage<C> {
     type Error = Error;
 
     fn try_from(value: &KeyPackage) -> Result<Self, Self::Error> {
-        let identifier = value.identifier.into();
+        let identifier = value.identifier.try_into()?;
         let secret_share: frost_core::keys::SigningShare<C> = (&value.secret_share).try_into()?;
         let verifying_share = frost_core::keys::VerifyingShare::<C>::from(secret_share);
-        let group_public = (&value.group_public).try_into()?;
+        let group_public = (&value.verifying_key).try_into()?;
         let threshold = value.threshold.get();
         let key_package = frost_core::keys::KeyPackage::<C>::new(
             identifier,
@@ -46,5 +46,21 @@ impl<C: Ciphersuite> TryFrom<&KeyPackage> for frost_core::keys::KeyPackage<C> {
             threshold as u16,
         );
         Ok(key_package)
+    }
+}
+
+impl KeyPackage {
+    pub fn new(
+        identifier: ParticipantIdentifier,
+        secret_share: SigningShare,
+        group_public: VerifyingKey,
+        threshold: NonZeroU8,
+    ) -> Self {
+        Self {
+            identifier,
+            secret_share,
+            verifying_key: group_public,
+            threshold,
+        }
     }
 }
