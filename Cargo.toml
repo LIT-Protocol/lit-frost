@@ -11,10 +11,12 @@ frost-ed25519 = { version =  "1.0.0-rc.0", git = "https://github.com/LIT-Protoco
 frost-ed448 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-p256 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-p384 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
+frost-redjubjub = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-rerandomized = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-ristretto255 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-secp256k1 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 ed448-goldilocks = "0.9"
+jubjub = { version = "0.10", git = "https://github.com/LIT-Protocol/jubjub.git" }
 k256 = { version = "0.13", features = ["arithmetic"] }
 p256 = { version = "0.13", features = ["arithmetic"] }
 p384 = { version = "0.13", features = ["arithmetic"] }

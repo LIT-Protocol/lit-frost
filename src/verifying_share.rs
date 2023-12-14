@@ -105,6 +105,7 @@ impl<'de> Deserialize<'de> for VerifyingShare {
                         Scheme::K256Sha256 => 33,
                         Scheme::P256Sha256 => 33,
                         Scheme::P384Sha384 => 49,
+                        Scheme::RedJubjubBlake2b512 => 32,
                     };
                     let mut value = Vec::new();
                     while let Some(b) = seq.next_element::<u8>()? {

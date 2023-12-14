@@ -10,7 +10,7 @@ mod verifying_key;
 mod verifying_share;
 
 pub use error::*;
-pub use identifier::ParticipantIdentifier;
+pub use identifier::Identifier;
 pub use key_package::KeyPackage;
 pub use signature::Signature;
 pub use signature_share::SignatureShare;
@@ -48,6 +48,8 @@ pub enum Scheme {
     P256Sha256 = 5,
     /// Compute the NistP384 schnorr signature using the SHA-384 hash function
     P384Sha384 = 6,
+    /// Compute the RedJubjub schnorr signature using the Blake2b-512 hash function
+    RedJubjubBlake2b512 = 7,
 }
 
 impl Display for Scheme {
@@ -59,6 +61,7 @@ impl Display for Scheme {
             Self::K256Sha256 => write!(f, "K256Sha256"),
             Self::P256Sha256 => write!(f, "P256Sha256"),
             Self::P384Sha384 => write!(f, "P384Sha384"),
+            Self::RedJubjubBlake2b512 => write!(f, "RedJubjubBlake2b512"),
             Self::Unknown => write!(f, "Unknown"),
         }
     }
@@ -77,6 +80,9 @@ impl FromStr for Scheme {
             "K256Sha256" | "FROST-secp256k1-SHA256-v1" => Ok(Self::K256Sha256),
             "P256Sha256" | "FROST-P256-SHA256-v1" => Ok(Self::P256Sha256),
             "P384Sha384" | "FROST-P384-SHA384-v1" => Ok(Self::P384Sha384),
+            "RedJubjubBlake2b512" | "FROST-RedJubjub-BLAKE2b-512-v1" => {
+                Ok(Self::RedJubjubBlake2b512)
+            }
             _ => Err(Error::General(format!("Unknown scheme: {}", s))),
         }
     }
@@ -91,6 +97,7 @@ impl From<u8> for Scheme {
             4 => Self::K256Sha256,
             5 => Self::P256Sha256,
             6 => Self::P384Sha384,
+            7 => Self::RedJubjubBlake2b512,
             _ => Self::Unknown,
         }
     }
@@ -143,6 +150,9 @@ impl Scheme {
             }
             Self::P256Sha256 => preprocess::<frost_p256::P256Sha256, R>(count, secret_share, rng),
             Self::P384Sha384 => preprocess::<frost_p384::P384Sha384, R>(count, secret_share, rng),
+            Self::RedJubjubBlake2b512 => {
+                preprocess::<frost_redjubjub::JubjubBlake2b512, R>(count, secret_share, rng)
+            }
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -162,6 +172,9 @@ impl Scheme {
             Self::K256Sha256 => round1::<frost_secp256k1::Secp256K1Sha256, R>(secret_share, rng),
             Self::P256Sha256 => round1::<frost_p256::P256Sha256, R>(secret_share, rng),
             Self::P384Sha384 => round1::<frost_p384::P384Sha384, R>(secret_share, rng),
+            Self::RedJubjubBlake2b512 => {
+                round1::<frost_redjubjub::JubjubBlake2b512, R>(secret_share, rng)
+            }
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -170,7 +183,7 @@ impl Scheme {
     pub fn sign(
         &self,
         message: &[u8],
-        signing_commitments: &[(ParticipantIdentifier, SigningCommitments)],
+        signing_commitments: &[(Identifier, SigningCommitments)],
         signing_nonce: &SigningNonces,
         key_package: &KeyPackage,
     ) -> FrostResult<SignatureShare> {
@@ -211,6 +224,12 @@ impl Scheme {
                 signing_nonce,
                 key_package,
             ),
+            Self::RedJubjubBlake2b512 => round2::<frost_redjubjub::JubjubBlake2b512>(
+                message,
+                signing_commitments,
+                signing_nonce,
+                key_package,
+            ),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -219,9 +238,9 @@ impl Scheme {
     pub fn aggregate(
         &self,
         message: &[u8],
-        signing_commitments: &[(ParticipantIdentifier, SigningCommitments)],
-        signature_shares: &[(ParticipantIdentifier, SignatureShare)],
-        signer_pubkeys: &[(ParticipantIdentifier, VerifyingShare)],
+        signing_commitments: &[(Identifier, SigningCommitments)],
+        signature_shares: &[(Identifier, SignatureShare)],
+        signer_pubkeys: &[(Identifier, VerifyingShare)],
         verifying_key: &VerifyingKey,
     ) -> FrostResult<Signature> {
         match self {
@@ -267,6 +286,13 @@ impl Scheme {
                 signer_pubkeys,
                 verifying_key,
             ),
+            Self::RedJubjubBlake2b512 => aggregate::<frost_redjubjub::JubjubBlake2b512>(
+                message,
+                signing_commitments,
+                signature_shares,
+                signer_pubkeys,
+                verifying_key,
+            ),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -293,6 +319,9 @@ impl Scheme {
             }
             Self::P256Sha256 => verify::<frost_p256::P256Sha256>(message, verifying_key, signature),
             Self::P384Sha384 => verify::<frost_p384::P384Sha384>(message, verifying_key, signature),
+            Self::RedJubjubBlake2b512 => {
+                verify::<frost_redjubjub::JubjubBlake2b512>(message, verifying_key, signature)
+            }
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -307,6 +336,9 @@ impl Scheme {
             Self::K256Sha256 => verifying_share::<frost_secp256k1::Secp256K1Sha256>(signing_share),
             Self::P256Sha256 => verifying_share::<frost_p256::P256Sha256>(signing_share),
             Self::P384Sha384 => verifying_share::<frost_p384::P384Sha384>(signing_share),
+            Self::RedJubjubBlake2b512 => {
+                verifying_share::<frost_redjubjub::JubjubBlake2b512>(signing_share)
+            }
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -317,7 +349,7 @@ impl Scheme {
         min_signers: u8,
         max_signers: u8,
         rng: &mut R,
-    ) -> FrostResult<(BTreeMap<ParticipantIdentifier, SigningShare>, VerifyingKey)> {
+    ) -> FrostResult<(BTreeMap<Identifier, SigningShare>, VerifyingKey)> {
         match self {
             Self::Ed25519Sha512 => generate_with_trusted_dealer::<frost_ed25519::Ed25519Sha512, R>(
                 min_signers,
@@ -350,6 +382,10 @@ impl Scheme {
                 max_signers,
                 rng,
             ),
+            Self::RedJubjubBlake2b512 => generate_with_trusted_dealer::<
+                frost_redjubjub::JubjubBlake2b512,
+                R,
+            >(min_signers, max_signers, rng),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -375,9 +411,9 @@ fn verifying_share<C: Ciphersuite>(signing_share: &SigningShare) -> FrostResult<
 
 fn aggregate<C: Ciphersuite>(
     message: &[u8],
-    signing_commitments: &[(ParticipantIdentifier, SigningCommitments)],
-    signature_shares: &[(ParticipantIdentifier, SignatureShare)],
-    signer_pubkeys: &[(ParticipantIdentifier, VerifyingShare)],
+    signing_commitments: &[(Identifier, SigningCommitments)],
+    signature_shares: &[(Identifier, SignatureShare)],
+    signer_pubkeys: &[(Identifier, VerifyingShare)],
     verifying_key: &VerifyingKey,
 ) -> FrostResult<Signature> {
     let signing_commitment_map =
@@ -401,7 +437,7 @@ fn aggregate<C: Ciphersuite>(
 
 fn round2<C: Ciphersuite>(
     message: &[u8],
-    signing_commitments: &[(ParticipantIdentifier, SigningCommitments)],
+    signing_commitments: &[(Identifier, SigningCommitments)],
     signing_nonce: &SigningNonces,
     key_package: &KeyPackage,
 ) -> FrostResult<SignatureShare> {
@@ -447,7 +483,7 @@ fn generate_with_trusted_dealer<C: Ciphersuite, R: CryptoRng + RngCore>(
     min_signers: u8,
     max_signers: u8,
     rng: &mut R,
-) -> FrostResult<(BTreeMap<ParticipantIdentifier, SigningShare>, VerifyingKey)> {
+) -> FrostResult<(BTreeMap<Identifier, SigningShare>, VerifyingKey)> {
     let (shares, public_package) = frost_core::keys::generate_with_dealer::<C, R>(
         max_signers as u16,
         min_signers as u16,
@@ -463,7 +499,7 @@ fn generate_with_trusted_dealer<C: Ciphersuite, R: CryptoRng + RngCore>(
 }
 
 fn create_frost_signing_commitments_from_bytes<C: Ciphersuite>(
-    signing_commitments: &[(ParticipantIdentifier, SigningCommitments)],
+    signing_commitments: &[(Identifier, SigningCommitments)],
 ) -> FrostResult<BTreeMap<frost_core::Identifier<C>, frost_core::round1::SigningCommitments<C>>> {
     let mut signing_commitments_map = BTreeMap::new();
     for (index, commitment) in signing_commitments {
@@ -473,7 +509,7 @@ fn create_frost_signing_commitments_from_bytes<C: Ciphersuite>(
 }
 
 fn create_frost_signing_shares_from_bytes<C: Ciphersuite>(
-    signing_shares: &[(ParticipantIdentifier, SignatureShare)],
+    signing_shares: &[(Identifier, SignatureShare)],
 ) -> FrostResult<BTreeMap<frost_core::Identifier<C>, frost_core::round2::SignatureShare<C>>> {
     let mut signing_commitments_map = BTreeMap::new();
     for (index, share) in signing_shares {
@@ -494,11 +530,12 @@ mod tests {
     #[case(Scheme::K256Sha256, 32)]
     #[case(Scheme::P384Sha384, 48)]
     #[case(Scheme::Ed448Shake256, 57)]
+    #[case(Scheme::RedJubjubBlake2b512, 32)]
     fn pregenerate(#[case] scheme: Scheme, #[case] length: usize) {
         let mut rng = rand::rngs::OsRng;
         let mut secret = SigningShare {
             scheme,
-            value: vec![1u8; length]
+            value: vec![1u8; length],
         };
         // Clear the high bits
         secret.value[length - 1] = 0;
@@ -517,6 +554,7 @@ mod tests {
     #[case(Scheme::K256Sha256)]
     #[case(Scheme::P384Sha384)]
     #[case(Scheme::Ed448Shake256)]
+    #[case(Scheme::RedJubjubBlake2b512)]
     fn rounds(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u8 = 3;
@@ -573,6 +611,7 @@ mod tests {
     #[case(Scheme::K256Sha256)]
     #[case(Scheme::P384Sha384)]
     #[case(Scheme::Ed448Shake256)]
+    #[case(Scheme::RedJubjubBlake2b512)]
     fn full(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u8 = 3;

@@ -103,6 +103,7 @@ impl<'de> Deserialize<'de> for SigningCommitments {
                         Scheme::K256Sha256 => 71,
                         Scheme::P256Sha256 => 71,
                         Scheme::P384Sha384 => 103,
+                        Scheme::RedJubjubBlake2b512 => 69,
                     };
                     let mut value = Vec::new();
                     while let Some(b) = seq.next_element::<u8>()? {

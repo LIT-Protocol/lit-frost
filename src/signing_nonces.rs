@@ -128,6 +128,7 @@ impl<'de> Deserialize<'de> for SigningNonces {
                         Scheme::K256Sha256 => 32,
                         Scheme::P256Sha256 => 32,
                         Scheme::P384Sha384 => 48,
+                        Scheme::RedJubjubBlake2b512 => 32,
                     };
                     let mut hiding = Vec::new();
                     while let Some(b) = seq.next_element::<u8>()? {

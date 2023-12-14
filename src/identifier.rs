@@ -4,20 +4,20 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// A FROST participant identifier.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy)]
-pub struct ParticipantIdentifier {
+pub struct Identifier {
     /// The scheme associated with this identifier.
     pub scheme: Scheme,
     /// The identifier value.
     pub id: u8,
 }
 
-impl<C: Ciphersuite> From<frost_core::Identifier<C>> for ParticipantIdentifier {
+impl<C: Ciphersuite> From<frost_core::Identifier<C>> for Identifier {
     fn from(s: frost_core::Identifier<C>) -> Self {
         Self::from(&s)
     }
 }
 
-impl<C: Ciphersuite> From<&frost_core::Identifier<C>> for ParticipantIdentifier {
+impl<C: Ciphersuite> From<&frost_core::Identifier<C>> for Identifier {
     fn from(s: &frost_core::Identifier<C>) -> Self {
         match C::ID.parse().unwrap() {
             Scheme::Ed25519Sha512 => Self {
@@ -44,23 +44,27 @@ impl<C: Ciphersuite> From<&frost_core::Identifier<C>> for ParticipantIdentifier 
                 scheme: Scheme::P384Sha384,
                 id: s.serialize().as_ref()[47],
             },
+            Scheme::RedJubjubBlake2b512 => Self {
+                scheme: Scheme::RedJubjubBlake2b512,
+                id: s.serialize().as_ref()[0],
+            },
             Scheme::Unknown => panic!("Unknown ciphersuite"),
         }
     }
 }
 
-impl<C: Ciphersuite> TryFrom<ParticipantIdentifier> for frost_core::Identifier<C> {
+impl<C: Ciphersuite> TryFrom<Identifier> for frost_core::Identifier<C> {
     type Error = Error;
 
-    fn try_from(s: ParticipantIdentifier) -> Result<Self, Self::Error> {
+    fn try_from(s: Identifier) -> Result<Self, Self::Error> {
         Self::try_from(&s)
     }
 }
 
-impl<C: Ciphersuite> TryFrom<&ParticipantIdentifier> for frost_core::Identifier<C> {
+impl<C: Ciphersuite> TryFrom<&Identifier> for frost_core::Identifier<C> {
     type Error = Error;
 
-    fn try_from(s: &ParticipantIdentifier) -> Result<Self, Self::Error> {
+    fn try_from(s: &Identifier) -> Result<Self, Self::Error> {
         let scheme = C::ID
             .parse::<Scheme>()
             .map_err(|_| Error::General("Unknown ciphersuite".to_string()))?;
@@ -72,7 +76,7 @@ impl<C: Ciphersuite> TryFrom<&ParticipantIdentifier> for frost_core::Identifier<
     }
 }
 
-impl Serialize for ParticipantIdentifier {
+impl Serialize for Identifier {
     fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
             (self.scheme.to_string(), self.id).serialize(s)
@@ -82,7 +86,7 @@ impl Serialize for ParticipantIdentifier {
     }
 }
 
-impl<'de> Deserialize<'de> for ParticipantIdentifier {
+impl<'de> Deserialize<'de> for Identifier {
     fn deserialize<D>(d: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -106,10 +110,10 @@ impl<'de> Deserialize<'de> for ParticipantIdentifier {
 
 #[test]
 fn test_participant_identifier() {
-    let id = ParticipantIdentifier {
+    let id = Identifier {
         scheme: Scheme::P384Sha384,
         id: 1,
     };
     let frost_id = frost_core::Identifier::<frost_p384::P384Sha384>::try_from(id).unwrap();
-    assert_eq!(id, ParticipantIdentifier::from(frost_id));
+    assert_eq!(id, Identifier::from(frost_id));
 }

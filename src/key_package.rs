@@ -1,4 +1,4 @@
-use crate::{Error, ParticipantIdentifier, SigningShare, VerifyingKey};
+use crate::{Error, Identifier, SigningShare, VerifyingKey};
 use frost_core::Ciphersuite;
 use serde::{Deserialize, Serialize};
 use std::num::NonZeroU8;
@@ -7,7 +7,7 @@ use std::num::NonZeroU8;
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Deserialize, Serialize)]
 pub struct KeyPackage {
     /// The identifier of the participant.
-    pub identifier: ParticipantIdentifier,
+    pub identifier: Identifier,
     /// The secret share of the participant.
     pub secret_share: SigningShare,
     /// The public key of the group.
