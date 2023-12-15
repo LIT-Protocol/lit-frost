@@ -1,3 +1,107 @@
+//! FROST is a threshold signature scheme that allows a group of signers to
+//! produce a single signature on a message. The signature is valid if and only
+//! if at least `threshold` of the signers have signed the message.
+//! FROST is based on the [FROST paper](https://eprint.iacr.org/2020/852.pdf)
+//! and the [FROST RFC](https://datatracker.ietf.org/doc/draft-irtf-cfrg-frost/).
+//!
+//! This crate centers around picking a signature scheme and generating the
+//! necessary keys to use FROST. The signature scheme is defined by the
+//! [`Scheme`] enum. All other types in this crate are data objects that support
+//! the signature schemes.
+//!
+//! FROST requires 2 rounds to complete a signature. The first round is
+//! performed by the signers to generate [`SigningNonces`] and
+//! [`SigningCommitments`]. Signers can either generate these values
+//! in advance using [`Scheme::pregenerate_signing_nonces`] or generate them
+//! on the fly using [`Scheme::round1`]. [`Scheme::round1`] only generates
+//! one nonce and commitment to will be used immediately.
+//!
+//! The second round is performed by the signers to generate a
+//! [`SignatureShare`]. [`Scheme::sign`] performs the second round of the
+//! signing protocol and generates a [`SignatureShare`].
+//!
+//! The [`SignatureShare`]s can then be aggregated into a single
+//! [`Signature`] using [`Scheme::aggregate`] by the signature recipient.
+//! The [`Signature`] can then be verified using [`Scheme::verify`] by anyone.
+//!
+//! [`SigningShare`]s are generated using distributed key generation (DKG) and
+//! help privately by each signer. [`SigningNonces`] must also be treated as
+//! secret values known by the signers and used only once per signing operation.
+//!
+//! [`SigningShare`]s can be converted from the most popular libraries using
+//! the [`From`] trait.
+//!
+//! # Examples
+//! ```
+//! use lit_frost::*;
+//! use ff::Field;
+//! use k256::{Scalar, ProjectivePoint};
+//! use rand::rngs::OsRng;
+//! use std::num::NonZeroU8;
+//! use vsss_rs::{shamir::split_secret, Share};
+//!
+//! // DKG happens prior to the signing protocol. The DKG generates the
+//! // key package and the secret shares. For this example, we will generate
+//! // them at random just to demonstrate how to use the library.
+//! let scheme = Scheme::K256Sha256;
+//! let secret = Scalar::random(&mut rand::thread_rng());
+//! let pubkey = ProjectivePoint::GENERATOR * secret;
+//!
+//! let shares = split_secret::<Scalar, u8, Vec<u8>>(2, 3, secret, &mut OsRng).unwrap();
+//!
+//! let share1 = SigningShare {
+//!     scheme,
+//!     value: shares[0].value().to_vec(),
+//! };
+//! let share2 = SigningShare {
+//!    scheme,
+//!   value: shares[1].value().to_vec(),
+//! };
+//! let group_key = VerifyingKey::from(pubkey);
+//!
+//!
+//! let (nonces1, commitments1) = scheme.round1(&share1, &mut OsRng).unwrap();
+//! let (nonces2, commitments2) = scheme.round1(&share2, &mut OsRng).unwrap();
+//!
+//! // Signer 1 sends signer 2 their signing commitments
+//! // Signer 2 sends signer 1 their signing commitments
+//!
+//! // Signer 1 knows their own key package
+//! let key_package1 = KeyPackage {
+//!     identifier: Identifier { scheme, id: 1 },
+//!     secret_share: share1.clone(),
+//!     verifying_key: group_key.clone(),
+//!     threshold: NonZeroU8::new(2).unwrap(),
+//! };
+//! // Signer 2 knows their own key package
+//! let key_package2 = KeyPackage {
+//!     identifier: Identifier { scheme, id: 2 },
+//!     secret_share: share2.clone(),
+//!     verifying_key: group_key.clone(),
+//!     threshold: NonZeroU8::new(2).unwrap(),
+//! };
+//!
+//! let signing_commitments = vec![(key_package1.identifier, commitments1), (key_package2.identifier, commitments2)];
+//!
+//! let signature_share1 = scheme.sign(b"test", &signing_commitments, &nonces1, &key_package1).unwrap();
+//! let signature_share2 = scheme.sign(b"test", &signing_commitments, &nonces2, &key_package2).unwrap();
+//!
+//! // Verifying shares are public and can be sent to anyone
+//! let verifying_share1 = scheme.verifying_share(&share1).unwrap();
+//! let verifying_share2 = scheme.verifying_share(&share2).unwrap();
+//!
+//! // Returns a signature if its valid or an error
+//! let signature = scheme.aggregate(
+//!     b"test",
+//!     &signing_commitments,
+//!     &[(key_package1.identifier, signature_share1), (key_package2.identifier, signature_share2)],
+//!     &[(key_package1.identifier, verifying_share1), (key_package2.identifier, verifying_share2)],
+//!    &group_key,
+//! ).unwrap();
+//!
+//! // Verify the signature
+//! scheme.verify(b"test", &group_key, &signature).unwrap();
+//! ```
 #[macro_use]
 mod macros;
 mod error;

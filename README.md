@@ -1,2 +1,4 @@
 # lit-frost
-Implement the FROST signing protocol.
+Implements the FROST signing protocol.
+
+
