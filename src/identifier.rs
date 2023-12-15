@@ -108,12 +108,56 @@ impl<'de> Deserialize<'de> for Identifier {
     }
 }
 
-#[test]
-fn test_participant_identifier() {
-    let id = Identifier {
-        scheme: Scheme::P384Sha384,
-        id: 1,
-    };
-    let frost_id = frost_core::Identifier::<frost_p384::P384Sha384>::try_from(id).unwrap();
-    assert_eq!(id, Identifier::from(frost_id));
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::Rng;
+    use rstest::*;
+
+    #[rstest]
+    #[case::ed25519(frost_ed25519::Ed25519Sha512, Scheme::Ed25519Sha512)]
+    #[case::ed448(frost_ed448::Ed448Shake256, Scheme::Ed448Shake256)]
+    #[case::ristretto25519(frost_ristretto255::Ristretto255Sha512, Scheme::Ristretto25519Sha512)]
+    #[case::k256(frost_secp256k1::Secp256K1Sha256, Scheme::K256Sha256)]
+    #[case::p256(frost_p256::P256Sha256, Scheme::P256Sha256)]
+    #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
+    #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
+    fn convert<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {
+        let id = Identifier { scheme, id: 1 };
+        let frost_id = frost_core::Identifier::<C>::try_from(id).unwrap();
+        assert_eq!(id, Identifier::from(frost_id));
+    }
+
+    #[rstest]
+    #[case::ed25519(Scheme::Ed25519Sha512)]
+    #[case::ed448(Scheme::Ed448Shake256)]
+    #[case::ristretto25519(Scheme::Ristretto25519Sha512)]
+    #[case::k256(Scheme::K256Sha256)]
+    #[case::p256(Scheme::P256Sha256)]
+    #[case::p384(Scheme::P384Sha384)]
+    #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
+    fn serialize(#[case] scheme: Scheme) {
+        const ITER: usize = 25;
+        for _ in 0..ITER {
+            let id = Identifier {
+                scheme,
+                id: rand::rngs::OsRng.gen::<u8>(),
+            };
+            let res = serde_json::to_string(&id);
+            assert!(res.is_ok());
+            let serialized = res.unwrap();
+            let res = serde_json::from_str(&serialized);
+            assert!(res.is_ok());
+            let deserialized: Identifier = res.unwrap();
+            assert_eq!(id, deserialized);
+            let res = serde_bare::to_vec(&id);
+            assert!(res.is_ok());
+            let serialized = res.unwrap();
+            assert_eq!(serialized.len(), 2);
+            let res = serde_bare::from_slice(&serialized);
+            assert!(res.is_ok());
+            let deserialized: Identifier = res.unwrap();
+            assert_eq!(id, deserialized);
+        }
+    }
 }

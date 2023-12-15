@@ -1,3 +1,5 @@
+#[macro_use]
+mod macros;
 mod error;
 mod identifier;
 mod key_package;
@@ -343,6 +345,58 @@ impl Scheme {
         }
     }
 
+    pub(crate) fn scalar_len(&self) -> FrostResult<usize> {
+        match self {
+            Self::Ed25519Sha512 => Ok(32),
+            Self::Ed448Shake256 => Ok(57),
+            Self::Ristretto25519Sha512 => Ok(32),
+            Self::K256Sha256 => Ok(32),
+            Self::P256Sha256 => Ok(32),
+            Self::P384Sha384 => Ok(48),
+            Self::RedJubjubBlake2b512 => Ok(32),
+            Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
+        }
+    }
+
+    pub(crate) fn compressed_point_len(&self) -> FrostResult<usize> {
+        match self {
+            Self::Ed25519Sha512 => Ok(32),
+            Self::Ed448Shake256 => Ok(57),
+            Self::Ristretto25519Sha512 => Ok(32),
+            Self::K256Sha256 => Ok(33),
+            Self::P256Sha256 => Ok(33),
+            Self::P384Sha384 => Ok(49),
+            Self::RedJubjubBlake2b512 => Ok(32),
+            Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
+        }
+    }
+
+    pub(crate) fn commitment_len(&self) -> FrostResult<usize> {
+        match self {
+            Self::Ed25519Sha512 => Ok(69),
+            Self::Ed448Shake256 => Ok(119),
+            Self::Ristretto25519Sha512 => Ok(69),
+            Self::K256Sha256 => Ok(71),
+            Self::P256Sha256 => Ok(71),
+            Self::P384Sha384 => Ok(103),
+            Self::RedJubjubBlake2b512 => Ok(69),
+            Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
+        }
+    }
+
+    pub(crate) fn signature_len(&self) -> FrostResult<usize> {
+        match self {
+            Self::Ed25519Sha512 => Ok(64),
+            Self::Ed448Shake256 => Ok(114),
+            Self::Ristretto25519Sha512 => Ok(64),
+            Self::K256Sha256 => Ok(64),
+            Self::P256Sha256 => Ok(64),
+            Self::P384Sha384 => Ok(96),
+            Self::RedJubjubBlake2b512 => Ok(64),
+            Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
+        }
+    }
+
     #[cfg(test)]
     pub fn generate_with_trusted_dealer<R: CryptoRng + RngCore>(
         &self,
@@ -524,13 +578,13 @@ mod tests {
     use rstest::*;
 
     #[rstest]
-    #[case(Scheme::Ed25519Sha512, 32)]
-    #[case(Scheme::Ristretto25519Sha512, 32)]
-    #[case(Scheme::P256Sha256, 32)]
-    #[case(Scheme::K256Sha256, 32)]
-    #[case(Scheme::P384Sha384, 48)]
-    #[case(Scheme::Ed448Shake256, 57)]
-    #[case(Scheme::RedJubjubBlake2b512, 32)]
+    #[case::ed25519(Scheme::Ed25519Sha512, 32)]
+    #[case::ed448(Scheme::Ed448Shake256, 57)]
+    #[case::ristretto25519(Scheme::Ristretto25519Sha512, 32)]
+    #[case::k256(Scheme::K256Sha256, 32)]
+    #[case::p256(Scheme::P256Sha256, 32)]
+    #[case::p384(Scheme::P384Sha384, 48)]
+    #[case::redjubjub(Scheme::RedJubjubBlake2b512, 32)]
     fn pregenerate(#[case] scheme: Scheme, #[case] length: usize) {
         let mut rng = rand::rngs::OsRng;
         let mut secret = SigningShare {
@@ -548,13 +602,13 @@ mod tests {
     }
 
     #[rstest]
-    #[case(Scheme::Ed25519Sha512)]
-    #[case(Scheme::Ristretto25519Sha512)]
-    #[case(Scheme::P256Sha256)]
-    #[case(Scheme::K256Sha256)]
-    #[case(Scheme::P384Sha384)]
-    #[case(Scheme::Ed448Shake256)]
-    #[case(Scheme::RedJubjubBlake2b512)]
+    #[case::ed25519(Scheme::Ed25519Sha512)]
+    #[case::ed448(Scheme::Ed448Shake256)]
+    #[case::ristretto25519(Scheme::Ristretto25519Sha512)]
+    #[case::k256(Scheme::K256Sha256)]
+    #[case::p256(Scheme::P256Sha256)]
+    #[case::p384(Scheme::P384Sha384)]
+    #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
     fn rounds(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u8 = 3;
@@ -605,13 +659,13 @@ mod tests {
     }
 
     #[rstest]
-    #[case(Scheme::Ed25519Sha512)]
-    #[case(Scheme::Ristretto25519Sha512)]
-    #[case(Scheme::P256Sha256)]
-    #[case(Scheme::K256Sha256)]
-    #[case(Scheme::P384Sha384)]
-    #[case(Scheme::Ed448Shake256)]
-    #[case(Scheme::RedJubjubBlake2b512)]
+    #[case::ed25519(Scheme::Ed25519Sha512)]
+    #[case::ed448(Scheme::Ed448Shake256)]
+    #[case::ristretto25519(Scheme::Ristretto25519Sha512)]
+    #[case::k256(Scheme::K256Sha256)]
+    #[case::p256(Scheme::P256Sha256)]
+    #[case::p384(Scheme::P384Sha384)]
+    #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
     fn full(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u8 = 3;

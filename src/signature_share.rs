@@ -1,10 +1,5 @@
 use crate::{Error, Scheme};
 use frost_core::{Ciphersuite, Field, Group};
-use serde::{
-    de::{SeqAccess, Visitor},
-    ser::SerializeTuple,
-    Deserialize, Deserializer, Serialize, Serializer,
-};
 
 /// A participant’s signature share, which is aggregated with all other signer’s shares into the joint signature.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
@@ -53,78 +48,102 @@ impl<C: Ciphersuite> TryFrom<&SignatureShare> for frost_core::round2::SignatureS
     }
 }
 
-impl Serialize for SignatureShare {
-    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        if s.is_human_readable() {
-            (self.scheme, &self.value[..]).serialize(s)
-        } else {
-            let mut seq = s.serialize_tuple(self.value.len() + 1)?;
-            seq.serialize_element(&(self.scheme as u8))?;
-            for b in &self.value {
-                seq.serialize_element(b)?;
-            }
+serde_impl!(SignatureShare, scalar_len, 58);
+display_impl!(SignatureShare);
 
-            seq.end()
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use frost_core::Field;
+    use rstest::*;
+
+    #[rstest]
+    #[case::ed25519(
+        frost_ed25519::Ed25519Sha512,
+        frost_ed25519::Ed25519ScalarField,
+        Scheme::Ed25519Sha512
+    )]
+    #[case::ed448(
+        frost_ed448::Ed448Shake256,
+        frost_ed448::Ed448ScalarField,
+        Scheme::Ed448Shake256
+    )]
+    #[case::ristretto25519(
+        frost_ristretto255::Ristretto255Sha512,
+        frost_ristretto255::RistrettoScalarField,
+        Scheme::Ristretto25519Sha512
+    )]
+    #[case::k256(
+        frost_secp256k1::Secp256K1Sha256,
+        frost_secp256k1::Secp256K1ScalarField,
+        Scheme::K256Sha256
+    )]
+    #[case::p256(
+        frost_p256::P256Sha256,
+        frost_p256::P256ScalarField,
+        Scheme::P256Sha256
+    )]
+    #[case::p384(
+        frost_p384::P384Sha384,
+        frost_p384::P384ScalarField,
+        Scheme::P384Sha384
+    )]
+    #[case::redjubjub(
+        frost_redjubjub::JubjubBlake2b512,
+        frost_redjubjub::JubjubScalarField,
+        Scheme::RedJubjubBlake2b512
+    )]
+    fn convert<C: Ciphersuite, F: Field>(#[case] _c: C, #[case] _f: F, #[case] scheme: Scheme) {
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = F::random(&mut rng);
+            let share = SignatureShare {
+                scheme,
+                value: F::serialize(&share).as_ref().to_vec(),
+            };
+            let frost_share = frost_core::round2::SignatureShare::<C>::try_from(&share);
+            assert!(frost_share.is_ok());
+            let frost_share = frost_share.unwrap();
+            assert_eq!(share, SignatureShare::from(&frost_share));
         }
     }
-}
 
-impl<'de> Deserialize<'de> for SignatureShare {
-    fn deserialize<D>(d: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        if d.is_human_readable() {
-            let (ty, value) = <(String, Vec<u8>)>::deserialize(d)?;
-            let scheme: Scheme = ty
-                .parse()
-                .map_err(|e: Error| serde::de::Error::custom(e.to_string()))?;
-            Ok(Self { scheme, value })
-        } else {
-            struct SignatureShareVisitor;
-
-            impl<'de> Visitor<'de> for SignatureShareVisitor {
-                type Value = SignatureShare;
-
-                fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                    formatter.write_str("a tuple of (u8, Vec<u8>)")
-                }
-
-                fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-                where
-                    A: SeqAccess<'de>,
-                {
-                    let scheme = seq
-                        .next_element::<u8>()?
-                        .ok_or_else(|| serde::de::Error::custom("Missing scheme"))?;
-                    let scheme = Scheme::from(scheme);
-                    let length = match scheme {
-                        Scheme::Unknown => {
-                            return Err(serde::de::Error::custom("Unknown ciphersuite"))
-                        }
-                        Scheme::Ed25519Sha512 => 32,
-                        Scheme::Ed448Shake256 => 57,
-                        Scheme::Ristretto25519Sha512 => 32,
-                        Scheme::K256Sha256 => 32,
-                        Scheme::P256Sha256 => 32,
-                        Scheme::P384Sha384 => 48,
-                        Scheme::RedJubjubBlake2b512 => 32,
-                    };
-                    let mut value = Vec::new();
-                    while let Some(b) = seq.next_element::<u8>()? {
-                        value.push(b);
-                        if value.len() == length {
-                            break;
-                        }
-                    }
-                    if value.len() != length {
-                        return Err(serde::de::Error::custom("Invalid length"));
-                    }
-                    Ok(SignatureShare { scheme, value })
-                }
+    #[rstest]
+    #[case::ed25519(frost_ed25519::Ed25519ScalarField, Scheme::Ed25519Sha512)]
+    #[case::ed448(frost_ed448::Ed448ScalarField, Scheme::Ed448Shake256)]
+    #[case::ristretto25519(frost_ristretto255::RistrettoScalarField, Scheme::Ristretto25519Sha512)]
+    #[case::k256(frost_secp256k1::Secp256K1ScalarField, Scheme::K256Sha256)]
+    #[case::p256(frost_p256::P256ScalarField, Scheme::P256Sha256)]
+    #[case::p384(frost_p384::P384ScalarField, Scheme::P384Sha384)]
+    #[case::redjubjub(frost_redjubjub::JubjubScalarField, Scheme::RedJubjubBlake2b512)]
+    fn serialize<F: Field>(#[case] _f: F, #[case] scheme: Scheme) {
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = F::random(&mut rng);
+            let share = SignatureShare {
+                scheme,
+                value: F::serialize(&share).as_ref().to_vec(),
+            };
+            let res = serde_json::to_string(&share);
+            assert!(res.is_ok());
+            let serialized = res.unwrap();
+            let res = serde_json::from_str(&serialized);
+            assert!(res.is_ok());
+            let deserialized: SignatureShare = res.unwrap();
+            assert_eq!(share, deserialized);
+            let res = serde_bare::to_vec(&share);
+            assert!(res.is_ok());
+            let serialized = res.unwrap();
+            assert_eq!(serialized.len(), scheme.scalar_len().unwrap() + 1);
+            let res = serde_bare::from_slice(&serialized);
+            if res.is_err() {
+                println!("Error: {:?}", res);
             }
-
-            d.deserialize_seq(SignatureShareVisitor)
+            assert!(res.is_ok());
+            let deserialized: SignatureShare = res.unwrap();
+            assert_eq!(share, deserialized);
         }
     }
 }

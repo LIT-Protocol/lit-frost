@@ -118,18 +118,9 @@ impl<'de> Deserialize<'de> for SigningNonces {
                         .next_element::<u8>()?
                         .ok_or_else(|| serde::de::Error::custom("Missing scheme"))?;
                     let scheme = Scheme::from(scheme);
-                    let length = match scheme {
-                        Scheme::Unknown => {
-                            return Err(serde::de::Error::custom("Unknown ciphersuite"))
-                        }
-                        Scheme::Ed25519Sha512 => 32,
-                        Scheme::Ed448Shake256 => 57,
-                        Scheme::Ristretto25519Sha512 => 32,
-                        Scheme::K256Sha256 => 32,
-                        Scheme::P256Sha256 => 32,
-                        Scheme::P384Sha384 => 48,
-                        Scheme::RedJubjubBlake2b512 => 32,
-                    };
+                    let length = scheme
+                        .scalar_len()
+                        .map_err(|e| serde::de::Error::custom(e.to_string()))?;
                     let mut hiding = Vec::new();
                     while let Some(b) = seq.next_element::<u8>()? {
                         hiding.push(b);
@@ -158,7 +149,7 @@ impl<'de> Deserialize<'de> for SigningNonces {
                 }
             }
 
-            d.deserialize_seq(SigningNoncesVisitor)
+            d.deserialize_tuple(115, SigningNoncesVisitor)
         }
     }
 }

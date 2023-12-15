@@ -1,10 +1,5 @@
 use crate::{Error, Scheme};
 use frost_core::{Ciphersuite, Field, Group};
-use serde::{
-    de::{SeqAccess, Visitor},
-    ser::SerializeTuple,
-    Deserialize, Deserializer, Serialize, Serializer,
-};
 
 /// A secret scalar value representing a signer’s share of the group secret.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
@@ -218,7 +213,7 @@ impl From<&ed448_goldilocks::Scalar> for SigningShare {
     fn from(s: &ed448_goldilocks::Scalar) -> Self {
         Self {
             scheme: Scheme::Ed448Shake256,
-            value: s.to_bytes().to_vec(),
+            value: s.to_bytes_rfc_8032().to_vec(),
         }
     }
 }
@@ -313,78 +308,207 @@ impl TryFrom<&SigningShare> for jubjub::Scalar {
     }
 }
 
-impl Serialize for SigningShare {
-    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        if s.is_human_readable() {
-            (self.scheme, &self.value[..]).serialize(s)
-        } else {
-            let mut seq = s.serialize_tuple(self.value.len() + 1)?;
-            seq.serialize_element(&(self.scheme as u8))?;
-            for b in &self.value {
-                seq.serialize_element(b)?;
-            }
+serde_impl!(SigningShare, scalar_len, 58);
+display_impl!(SigningShare);
 
-            seq.end()
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::*;
+
+    #[rstest]
+    #[case::ed25519(
+        frost_ed25519::Ed25519Sha512,
+        frost_ed25519::Ed25519ScalarField,
+        Scheme::Ed25519Sha512
+    )]
+    #[case::ed448(
+        frost_ed448::Ed448Shake256,
+        frost_ed448::Ed448ScalarField,
+        Scheme::Ed448Shake256
+    )]
+    #[case::ristretto25519(
+        frost_ristretto255::Ristretto255Sha512,
+        frost_ristretto255::RistrettoScalarField,
+        Scheme::Ristretto25519Sha512
+    )]
+    #[case::k256(
+        frost_secp256k1::Secp256K1Sha256,
+        frost_secp256k1::Secp256K1ScalarField,
+        Scheme::K256Sha256
+    )]
+    #[case::p256(
+        frost_p256::P256Sha256,
+        frost_p256::P256ScalarField,
+        Scheme::P256Sha256
+    )]
+    #[case::p384(
+        frost_p384::P384Sha384,
+        frost_p384::P384ScalarField,
+        Scheme::P384Sha384
+    )]
+    #[case::redjubjub(
+        frost_redjubjub::JubjubBlake2b512,
+        frost_redjubjub::JubjubScalarField,
+        Scheme::RedJubjubBlake2b512
+    )]
+    fn convert_1<C: Ciphersuite, F: Field>(#[case] _c: C, #[case] _f: F, #[case] scheme: Scheme) {
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = F::random(&mut rng);
+            let share = SigningShare {
+                scheme,
+                value: F::serialize(&share).as_ref().to_vec(),
+            };
+            let frost_share = frost_core::keys::SigningShare::<C>::try_from(&share);
+            assert!(frost_share.is_ok());
+            let frost_share = frost_share.unwrap();
+            assert_eq!(share, SigningShare::from(&frost_share));
         }
     }
-}
 
-impl<'de> Deserialize<'de> for SigningShare {
-    fn deserialize<D>(d: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        if d.is_human_readable() {
-            let (ty, value) = <(String, Vec<u8>)>::deserialize(d)?;
-            let scheme: Scheme = ty
-                .parse()
-                .map_err(|e: Error| serde::de::Error::custom(e.to_string()))?;
-            Ok(Self { scheme, value })
-        } else {
-            struct SigningShareVisitor;
+    #[test]
+    fn convert_k256() {
+        use ff::Field as FFField;
 
-            impl<'de> Visitor<'de> for SigningShareVisitor {
-                type Value = SigningShare;
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = k256::Scalar::random(&mut rng);
+            let share: SigningShare = share.into();
+            let frost_share = k256::Scalar::try_from(&share);
+            assert!(frost_share.is_ok());
+            let frost_share = frost_share.unwrap();
+            assert_eq!(share, SigningShare::from(&frost_share));
+        }
+    }
 
-                fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                    formatter.write_str("a tuple of (u8, Vec<u8>)")
-                }
+    #[test]
+    fn convert_p256() {
+        use ff::Field as FFField;
 
-                fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-                where
-                    A: SeqAccess<'de>,
-                {
-                    let scheme = seq
-                        .next_element::<u8>()?
-                        .ok_or_else(|| serde::de::Error::custom("Missing scheme"))?;
-                    let scheme = Scheme::from(scheme);
-                    let length = match scheme {
-                        Scheme::Unknown => {
-                            return Err(serde::de::Error::custom("Unknown ciphersuite"))
-                        }
-                        Scheme::Ed25519Sha512 => 32,
-                        Scheme::Ed448Shake256 => 57,
-                        Scheme::Ristretto25519Sha512 => 32,
-                        Scheme::K256Sha256 => 32,
-                        Scheme::P256Sha256 => 32,
-                        Scheme::P384Sha384 => 48,
-                        Scheme::RedJubjubBlake2b512 => 32,
-                    };
-                    let mut value = Vec::new();
-                    while let Some(b) = seq.next_element::<u8>()? {
-                        value.push(b);
-                        if value.len() == length {
-                            break;
-                        }
-                    }
-                    if value.len() != length {
-                        return Err(serde::de::Error::custom("Invalid length"));
-                    }
-                    Ok(SigningShare { scheme, value })
-                }
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = p256::Scalar::random(&mut rng);
+            let share: SigningShare = share.into();
+            let frost_share = p256::Scalar::try_from(&share);
+            assert!(frost_share.is_ok());
+            let frost_share = frost_share.unwrap();
+            assert_eq!(share, SigningShare::from(&frost_share));
+        }
+    }
+
+    #[test]
+    fn convert_p384() {
+        use ff::Field as FFField;
+
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = p384::Scalar::random(&mut rng);
+            let share: SigningShare = share.into();
+            let frost_share = p384::Scalar::try_from(&share);
+            assert!(frost_share.is_ok());
+            let frost_share = frost_share.unwrap();
+            assert_eq!(share, SigningShare::from(&frost_share));
+        }
+    }
+
+    #[test]
+    fn convert_ed25519_ristretto25519() {
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = curve25519_dalek::Scalar::random(&mut rng);
+            let share: SigningShare = share.into();
+            let frost_share = curve25519_dalek::Scalar::try_from(&share);
+            assert!(frost_share.is_ok());
+            let frost_share = frost_share.unwrap();
+            assert_eq!(share, SigningShare::from(&frost_share));
+        }
+    }
+
+    #[test]
+    fn convert_ed448() {
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = ed448_goldilocks::Scalar::random(&mut rng);
+            let share: SigningShare = share.into();
+            let frost_share = ed448_goldilocks::Scalar::try_from(&share);
+            assert!(frost_share.is_ok());
+            let frost_share = frost_share.unwrap();
+            assert_eq!(share, SigningShare::from(&frost_share));
+        }
+    }
+
+    #[test]
+    fn convert_redjubjub() {
+        use ff::Field as FFField;
+
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = jubjub::Scalar::random(&mut rng);
+            let share: SigningShare = share.into();
+            let frost_share = jubjub::Scalar::try_from(&share);
+            assert!(frost_share.is_ok());
+            let frost_share = frost_share.unwrap();
+            assert_eq!(share, SigningShare::from(&frost_share));
+        }
+    }
+
+    #[test]
+    fn convert_vsss_wrapped() {
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = curve25519_dalek::Scalar::random(&mut rng);
+            let share: SigningShare = vsss_rs::curve25519::WrappedScalar(share).into();
+            let frost_share = vsss_rs::curve25519::WrappedScalar::try_from(&share);
+            assert!(frost_share.is_ok());
+            let frost_share = frost_share.unwrap();
+            assert_eq!(share, SigningShare::from(&frost_share));
+        }
+    }
+
+    #[rstest]
+    #[case::ed25519(frost_ed25519::Ed25519ScalarField, Scheme::Ed25519Sha512)]
+    #[case::ed448(frost_ed448::Ed448ScalarField, Scheme::Ed448Shake256)]
+    #[case::ristretto25519(frost_ristretto255::RistrettoScalarField, Scheme::Ristretto25519Sha512)]
+    #[case::k256(frost_secp256k1::Secp256K1ScalarField, Scheme::K256Sha256)]
+    #[case::p256(frost_p256::P256ScalarField, Scheme::P256Sha256)]
+    #[case::p384(frost_p384::P384ScalarField, Scheme::P384Sha384)]
+    #[case::redjubjub(frost_redjubjub::JubjubScalarField, Scheme::RedJubjubBlake2b512)]
+    fn serialize<F: Field>(#[case] _f: F, #[case] scheme: Scheme) {
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = F::random(&mut rng);
+            let share = SigningShare {
+                scheme,
+                value: F::serialize(&share).as_ref().to_vec(),
+            };
+            let res = serde_json::to_string(&share);
+            assert!(res.is_ok());
+            let serialized = res.unwrap();
+            let res = serde_json::from_str(&serialized);
+            assert!(res.is_ok());
+            let deserialized: SigningShare = res.unwrap();
+            assert_eq!(share, deserialized);
+            let res = serde_bare::to_vec(&share);
+            assert!(res.is_ok());
+            let serialized = res.unwrap();
+            assert_eq!(serialized.len(), scheme.scalar_len().unwrap() + 1);
+            let res = serde_bare::from_slice(&serialized);
+            if res.is_err() {
+                println!("Error: {:?}", res);
             }
-
-            d.deserialize_seq(SigningShareVisitor)
+            assert!(res.is_ok());
+            let deserialized: SigningShare = res.unwrap();
+            assert_eq!(share, deserialized);
         }
     }
 }
