@@ -389,9 +389,9 @@ impl Scheme {
             Self::Ed25519Sha512 => Ok(64),
             Self::Ed448Shake256 => Ok(114),
             Self::Ristretto25519Sha512 => Ok(64),
-            Self::K256Sha256 => Ok(64),
-            Self::P256Sha256 => Ok(64),
-            Self::P384Sha384 => Ok(96),
+            Self::K256Sha256 => Ok(65),
+            Self::P256Sha256 => Ok(65),
+            Self::P384Sha384 => Ok(97),
             Self::RedJubjubBlake2b512 => Ok(64),
             Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
         }

@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 curve25519-dalek = { version = "=4.1.1", features = ["rand_core"] }
+ed448-goldilocks = { version = "0.9", git = "https://github.com/LIT-Protocol/Ed448-Goldilocks.git" }
 frost-core = { version = "1.0.0-rc.0", features = ["internals"], git = "https://github.com/LIT-Protocol/frost.git" }
 frost-ed25519 = { version =  "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-ed448 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
@@ -15,7 +16,7 @@ frost-redjubjub = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protoc
 frost-rerandomized = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-ristretto255 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-secp256k1 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
-ed448-goldilocks = { version = "0.9", git = "https://github.com/LIT-Protocol/Ed448-Goldilocks.git" }
+hex = "0.4"
 jubjub = { version = "0.10", git = "https://github.com/LIT-Protocol/jubjub.git" }
 k256 = { version = "0.13", features = ["arithmetic"] }
 p256 = { version = "0.13", features = ["arithmetic"] }

@@ -78,7 +78,7 @@ macro_rules! display_impl {
     ($name:ident) => {
         impl std::fmt::Display for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                write!(f, "{}: 0x", self.scheme)?;
+                write!(f, "scheme: {}: value: 0x", self.scheme)?;
                 for b in &self.value {
                     write!(f, "{:02x}", b)?;
                 }
