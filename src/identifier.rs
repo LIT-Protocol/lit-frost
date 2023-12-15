@@ -1,14 +1,21 @@
 use crate::{Error, Scheme};
 use frost_core::Ciphersuite;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt::{self, Display, Formatter};
 
 /// A FROST participant identifier.
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy, Default)]
 pub struct Identifier {
     /// The scheme associated with this identifier.
     pub scheme: Scheme,
     /// The identifier value.
     pub id: u8,
+}
+
+impl Display for Identifier {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "scheme: {}, id: {}", self.scheme, self.id)
+    }
 }
 
 impl<C: Ciphersuite> From<frost_core::Identifier<C>> for Identifier {

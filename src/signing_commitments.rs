@@ -5,7 +5,7 @@ use frost_core::Ciphersuite;
 ///
 /// This step can be batched using Scheme::pregenerate_signing_nonces.
 /// Each [`SigningCommitments`] can be used for exactly one signature.
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct SigningCommitments {
     /// The ciphersuite used for this signing commitment.
     pub scheme: Scheme,

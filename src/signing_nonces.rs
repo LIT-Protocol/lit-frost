@@ -11,7 +11,7 @@ use std::fmt::{self, Display, Formatter};
 ///
 /// Note that [`SigningNonces`] must be used only once for a signing operation;
 /// re-using nonces will result in leakage of a signer’s long-lived signing key.
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct SigningNonces {
     /// The ciphersuite used for the signing nonces
     pub scheme: Scheme,

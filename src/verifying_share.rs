@@ -2,7 +2,7 @@ use crate::{Error, Scheme};
 use frost_core::{Ciphersuite, Group};
 
 /// A public group element that represents a single signer’s public verification share.
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct VerifyingShare {
     /// The scheme associated with this share.
     scheme: Scheme,

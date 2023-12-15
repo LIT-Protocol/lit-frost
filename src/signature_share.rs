@@ -2,7 +2,7 @@ use crate::{Error, Scheme};
 use frost_core::{Ciphersuite, Field, Group};
 
 /// A participant’s signature share, which is aggregated with all other signer’s shares into the joint signature.
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct SignatureShare {
     /// The ciphersuite used to create this signature share.
     pub scheme: Scheme,

@@ -137,10 +137,11 @@ use std::{
 };
 
 /// The FROST supported signature schemes
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy, Default)]
 #[repr(u8)]
 pub enum Scheme {
     /// Unknown scheme
+    #[default]
     Unknown = 0,
     /// Compute the Ed25519 signature using the SHA-512 hash function
     Ed25519Sha512 = 1,

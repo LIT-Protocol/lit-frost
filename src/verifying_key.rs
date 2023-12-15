@@ -2,7 +2,7 @@ use crate::{Error, Scheme};
 use frost_core::{Ciphersuite, Group};
 
 /// A valid verifying key for Schnorr signatures
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct VerifyingKey {
     /// The scheme used by this verifying key
     pub scheme: Scheme,

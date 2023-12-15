@@ -2,7 +2,7 @@ use crate::{Error, Scheme};
 use frost_core::Ciphersuite;
 
 /// A Schnorr signature
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct Signature {
     /// The signature scheme
     pub scheme: Scheme,

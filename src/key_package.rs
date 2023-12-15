@@ -1,7 +1,10 @@
 use crate::{Error, Identifier, SigningShare, VerifyingKey};
 use frost_core::Ciphersuite;
 use serde::{Deserialize, Serialize};
-use std::num::NonZeroU8;
+use std::{
+    fmt::{self, Display, Formatter},
+    num::NonZeroU8,
+};
 
 /// The frost keys used for signing generated during the DKG.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Deserialize, Serialize)]
@@ -50,5 +53,15 @@ impl<C: Ciphersuite> TryFrom<&KeyPackage> for frost_core::keys::KeyPackage<C> {
             threshold as u16,
         );
         Ok(key_package)
+    }
+}
+
+impl Display for KeyPackage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "identifier: {}, verifying_key: {}, threshold: {}",
+            self.identifier, self.verifying_key, self.threshold
+        )
     }
 }

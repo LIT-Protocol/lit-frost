@@ -2,7 +2,7 @@ use crate::{Error, Scheme};
 use frost_core::{Ciphersuite, Field, Group};
 
 /// A secret scalar value representing a signer’s share of the group secret.
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct SigningShare {
     /// The scheme used to generate the signing share.
     pub scheme: Scheme,
