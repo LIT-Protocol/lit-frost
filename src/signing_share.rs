@@ -311,6 +311,10 @@ impl TryFrom<&SigningShare> for jubjub::Scalar {
 serde_impl!(SigningShare, scalar_len, 58);
 display_impl!(SigningShare);
 
+impl SigningShare {
+    ct_is_zero_impl!();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

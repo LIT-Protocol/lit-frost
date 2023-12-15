@@ -24,6 +24,7 @@ p384 = { version = "0.13", features = ["arithmetic"] }
 rand_core = "0.6"
 serde = "1.0"
 sha2 = "0.10"
+subtle = "2.5"
 thiserror = "1.0"
 vsss-rs = { version = "3.3", features = ["curve25519"] }
 

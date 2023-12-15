@@ -3,7 +3,7 @@ macro_rules! serde_impl {
         impl serde::Serialize for $name {
             fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
                 if s.is_human_readable() {
-                    (self.scheme, &self.value[..]).serialize(s)
+                    (self.scheme, hex::encode(&self.value[..])).serialize(s)
                 } else {
                     use serde::ser::SerializeTuple;
 
@@ -24,10 +24,12 @@ macro_rules! serde_impl {
                 D: serde::Deserializer<'de>,
             {
                 if d.is_human_readable() {
-                    let (ty, value) = <(String, Vec<u8>)>::deserialize(d)?;
+                    let (ty, value) = <(String, String)>::deserialize(d)?;
                     let scheme: Scheme = ty
                         .parse()
                         .map_err(|e: Error| serde::de::Error::custom(e.to_string()))?;
+                    let value = hex::decode(&value)
+                        .map_err(|e| serde::de::Error::custom(format!("Invalid hex: {}", e)))?;
                     Ok(Self { scheme, value })
                 } else {
                     struct NameVisitor;
@@ -83,6 +85,28 @@ macro_rules! display_impl {
                     write!(f, "{:02x}", b)?;
                 }
                 Ok(())
+            }
+        }
+    };
+}
+
+macro_rules! ct_is_zero_impl {
+    () => {
+        /// Returns true if this value is zero.
+        pub fn is_zero(&self) -> subtle::Choice {
+            crate::is_zero(self.value.as_slice())
+        }
+    };
+}
+
+macro_rules! is_identity_impl {
+    () => {
+        /// Returns true if this value is zero.
+        pub fn is_identity(&self) -> subtle::Choice {
+            if self.value.iter().all(|x| *x == 0) {
+                subtle::Choice::from(1u8)
+            } else {
+                subtle::Choice::from(0u8)
             }
         }
     };

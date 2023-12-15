@@ -48,6 +48,10 @@ impl<C: Ciphersuite> TryFrom<&VerifyingShare> for frost_core::keys::VerifyingSha
 serde_impl!(VerifyingShare, compressed_point_len, 58);
 display_impl!(VerifyingShare);
 
+impl VerifyingShare {
+    is_identity_impl!();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

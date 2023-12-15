@@ -724,6 +724,10 @@ impl TryFrom<&VerifyingKey> for vsss_rs::curve25519::WrappedRistretto {
 serde_impl!(VerifyingKey, compressed_point_len, 58);
 display_impl!(VerifyingKey);
 
+impl VerifyingKey {
+    is_identity_impl!();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

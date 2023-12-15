@@ -48,6 +48,10 @@ impl<C: Ciphersuite> TryFrom<&Signature> for frost_core::Signature<C> {
 serde_impl!(Signature, signature_len, 115);
 display_impl!(Signature);
 
+impl Signature {
+    ct_is_zero_impl!();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -115,6 +115,14 @@ impl<'de> Deserialize<'de> for Identifier {
     }
 }
 
+impl Identifier {
+    pub fn is_zero(&self) -> subtle::Choice {
+        let i = self.id as i8;
+        let res = ((i | -i) >> 7) + 1;
+        subtle::Choice::from(res as u8)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

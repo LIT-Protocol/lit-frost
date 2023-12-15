@@ -51,6 +51,10 @@ impl<C: Ciphersuite> TryFrom<&SignatureShare> for frost_core::round2::SignatureS
 serde_impl!(SignatureShare, scalar_len, 58);
 display_impl!(SignatureShare);
 
+impl SignatureShare {
+    ct_is_zero_impl!();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -555,6 +555,9 @@ fn verify<C: Ciphersuite>(
     verifying_key: &VerifyingKey,
     signature: &Signature,
 ) -> FrostResult<()> {
+    if (signature.is_zero() | verifying_key.is_identity()).into() {
+        return Err(Error::General("Error verifying signature".to_string()));
+    }
     let verifying_key: frost_core::VerifyingKey<C> = verifying_key.try_into()?;
     let signature = signature.try_into()?;
     verifying_key
@@ -575,6 +578,21 @@ fn aggregate<C: Ciphersuite>(
     signer_pubkeys: &[(Identifier, VerifyingShare)],
     verifying_key: &VerifyingKey,
 ) -> FrostResult<Signature> {
+    if signing_commitments
+        .iter()
+        .any(|(i, c)| (i.is_zero() | c.is_identity()).into())
+        | signature_shares
+            .iter()
+            .any(|(i, s)| (i.is_zero() | s.is_zero()).into())
+        | signer_pubkeys
+            .iter()
+            .any(|(i, s)| (i.is_zero() | s.is_identity()).into())
+    {
+        return Err(Error::General("Error aggregating signature".to_string()));
+    }
+    if verifying_key.is_identity().into() {
+        return Err(Error::General("Error aggregating signature".to_string()));
+    }
     let signing_commitment_map =
         create_frost_signing_commitments_from_bytes::<C>(signing_commitments)?;
     let signature_shares_map = create_frost_signing_shares_from_bytes::<C>(signature_shares)?;
@@ -600,6 +618,19 @@ fn round2<C: Ciphersuite>(
     signing_nonce: &SigningNonces,
     key_package: &KeyPackage,
 ) -> FrostResult<SignatureShare> {
+    if (key_package.secret_share.is_zero()
+        | key_package.verifying_key.is_identity()
+        | signing_nonce.is_zero())
+    .into()
+    {
+        return Err(Error::General("Error signing, bad inputs".to_string()));
+    }
+    if signing_commitments
+        .iter()
+        .any(|(i, c)| (i.is_zero() | c.is_identity()).into())
+    {
+        return Err(Error::General("Error signing, bad inputs".to_string()));
+    }
     let key_package = key_package.try_into()?;
     let signing_nonces = signing_nonce.try_into()?;
     let signing_commitments_map =
@@ -675,6 +706,15 @@ fn create_frost_signing_shares_from_bytes<C: Ciphersuite>(
         signing_commitments_map.insert(index.try_into()?, share.try_into()?);
     }
     Ok(signing_commitments_map)
+}
+
+pub(crate) fn is_zero(value: &[u8]) -> subtle::Choice {
+    let mut result = 0i8;
+    for b in value {
+        result |= *b as i8;
+    }
+    let result = ((result | -result) >> 7) + 1;
+    subtle::Choice::from(result as u8)
 }
 
 #[cfg(test)]

@@ -70,7 +70,12 @@ impl<C: Ciphersuite> TryFrom<&SigningNonces> for frost_core::round1::SigningNonc
 impl Serialize for SigningNonces {
     fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         if s.is_human_readable() {
-            (self.scheme.to_string(), &self.hiding, &self.binding).serialize(s)
+            (
+                self.scheme.to_string(),
+                hex::encode(&self.hiding),
+                hex::encode(&self.binding),
+            )
+                .serialize(s)
         } else {
             let mut seq = s.serialize_tuple(1 + self.hiding.len() + self.binding.len())?;
             seq.serialize_element(&(self.scheme as u8))?;
@@ -92,10 +97,14 @@ impl<'de> Deserialize<'de> for SigningNonces {
         D: Deserializer<'de>,
     {
         if d.is_human_readable() {
-            let (ty, hiding, binding) = <(String, Vec<u8>, Vec<u8>)>::deserialize(d)?;
+            let (ty, hiding, binding) = <(String, String, String)>::deserialize(d)?;
             let scheme: Scheme = ty
                 .parse()
                 .map_err(|e: Error| serde::de::Error::custom(e.to_string()))?;
+            let hiding = hex::decode(&hiding)
+                .map_err(|e| serde::de::Error::custom(format!("Invalid hex: {}", e)))?;
+            let binding = hex::decode(&binding)
+                .map_err(|e| serde::de::Error::custom(format!("Invalid hex: {}", e)))?;
             Ok(Self {
                 scheme,
                 hiding,
@@ -164,6 +173,13 @@ impl Display for SigningNonces {
             hex::encode(&self.hiding),
             hex::encode(&self.binding)
         )
+    }
+}
+
+impl SigningNonces {
+    /// Return true if the nonces are valid aka not zero
+    pub fn is_zero(&self) -> subtle::Choice {
+        crate::is_zero(&self.hiding) | crate::is_zero(&self.binding)
     }
 }
 

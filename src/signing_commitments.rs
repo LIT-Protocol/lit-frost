@@ -46,6 +46,10 @@ impl<C: Ciphersuite> TryFrom<&SigningCommitments> for frost_core::round1::Signin
 serde_impl!(SigningCommitments, commitment_len, 120);
 display_impl!(SigningCommitments);
 
+impl SigningCommitments {
+    is_identity_impl!();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
