@@ -16,6 +16,7 @@ frost-redjubjub = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protoc
 frost-rerandomized = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-ristretto255 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-secp256k1 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
+gennaro-dkg = "0.8"
 hex = "0.4"
 jubjub = { version = "0.10", git = "https://github.com/LIT-Protocol/jubjub.git" }
 k256 = { version = "0.13", features = ["arithmetic"] }

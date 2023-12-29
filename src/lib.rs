@@ -130,6 +130,7 @@ use core::num::NonZeroU8;
 use frost_core::Ciphersuite;
 use rand_core::{CryptoRng, RngCore};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::num::NonZeroUsize;
 use std::{
     collections::BTreeMap,
     fmt::{self, Debug, Display, Formatter},
@@ -450,6 +451,52 @@ impl Scheme {
         }
     }
 
+    pub fn get_dkg_params(
+        &self,
+        min_signers: NonZeroUsize,
+        max_signers: NonZeroUsize,
+    ) -> FrostResult<FrostDkgParameters> {
+        match self {
+            Self::Ed25519Sha512 => Ok(FrostDkgParameters::Ed25519Sha512(
+                gennaro_dkg::Parameters::<vsss_rs::curve25519::WrappedEdwards>::new(
+                    min_signers,
+                    max_signers,
+                ),
+            )),
+            Self::Ed448Shake256 => Ok(FrostDkgParameters::Ed448Shake256(
+                gennaro_dkg::Parameters::<ed448_goldilocks::EdwardsPoint>::new(
+                    min_signers,
+                    max_signers,
+                ),
+            )),
+            Self::Ristretto25519Sha512 => Ok(FrostDkgParameters::Ristretto25519Sha512(
+                gennaro_dkg::Parameters::<vsss_rs::curve25519::WrappedRistretto>::new(
+                    min_signers,
+                    max_signers,
+                ),
+            )),
+            Self::K256Sha256 => Ok(FrostDkgParameters::K256Sha256(gennaro_dkg::Parameters::<
+                k256::ProjectivePoint,
+            >::new(
+                min_signers, max_signers
+            ))),
+            Self::P256Sha256 => Ok(FrostDkgParameters::P256Sha256(gennaro_dkg::Parameters::<
+                p256::ProjectivePoint,
+            >::new(
+                min_signers, max_signers
+            ))),
+            Self::P384Sha384 => Ok(FrostDkgParameters::P384Sha384(gennaro_dkg::Parameters::<
+                p384::ProjectivePoint,
+            >::new(
+                min_signers, max_signers
+            ))),
+            Self::RedJubjubBlake2b512 => Ok(FrostDkgParameters::RedJubjubBlake2b512(
+                gennaro_dkg::Parameters::<jubjub::SubgroupPoint>::new(min_signers, max_signers),
+            )),
+            Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
+        }
+    }
+
     pub(crate) fn scalar_len(&self) -> FrostResult<usize> {
         match self {
             Self::Ed25519Sha512 => Ok(32),
@@ -548,6 +595,17 @@ impl Scheme {
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum FrostDkgParameters {
+    Ed25519Sha512(gennaro_dkg::Parameters<vsss_rs::curve25519::WrappedEdwards>),
+    Ed448Shake256(gennaro_dkg::Parameters<ed448_goldilocks::EdwardsPoint>),
+    Ristretto25519Sha512(gennaro_dkg::Parameters<vsss_rs::curve25519::WrappedRistretto>),
+    K256Sha256(gennaro_dkg::Parameters<k256::ProjectivePoint>),
+    P256Sha256(gennaro_dkg::Parameters<p256::ProjectivePoint>),
+    P384Sha384(gennaro_dkg::Parameters<p384::ProjectivePoint>),
+    RedJubjubBlake2b512(gennaro_dkg::Parameters<jubjub::SubgroupPoint>),
 }
 
 fn verify<C: Ciphersuite>(
