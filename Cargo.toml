@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 curve25519-dalek = { version = "=4.1.1", features = ["rand_core"] }
-ed448-goldilocks = { version = "0.9", git = "https://github.com/LIT-Protocol/Ed448-Goldilocks.git" }
+ed448-goldilocks = { version = "0.11", package = "ed448-goldilocks-plus" }
 frost-core = { version = "1.0.0-rc.0", features = ["internals"], git = "https://github.com/LIT-Protocol/frost.git" }
 frost-ed25519 = { version =  "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-ed448 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
@@ -23,6 +23,7 @@ p256 = { version = "0.13", features = ["arithmetic"] }
 p384 = { version = "0.13", features = ["arithmetic"] }
 rand_core = "0.6"
 serde = "1.0"
+serde_bare = "0.5"
 sha2 = "0.10"
 subtle = "2.5"
 thiserror = "1.0"
@@ -33,6 +34,5 @@ group = "0.13"
 ff = "0.13"
 lazy_static = "1.4"
 serde_json = "1.0"
-serde_bare = "0.5"
 rand = "0.8"
 rstest = "0.18"

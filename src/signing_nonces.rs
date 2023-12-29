@@ -176,6 +176,8 @@ impl Display for SigningNonces {
     }
 }
 
+from_impl!(SigningNonces);
+
 impl SigningNonces {
     /// Return true if the nonces are valid aka not zero
     pub fn is_zero(&self) -> subtle::Choice {

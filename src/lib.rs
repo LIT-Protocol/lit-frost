@@ -555,11 +555,11 @@ fn verify<C: Ciphersuite>(
     verifying_key: &VerifyingKey,
     signature: &Signature,
 ) -> FrostResult<()> {
-    if (signature.is_zero() | verifying_key.is_identity()).into() {
+    let verifying_key: frost_core::VerifyingKey<C> = verifying_key.try_into()?;
+    let signature: frost_core::Signature<C> = signature.try_into()?;
+    if !verifying_key.is_valid() || !signature.is_valid() {
         return Err(Error::General("Error verifying signature".to_string()));
     }
-    let verifying_key: frost_core::VerifyingKey<C> = verifying_key.try_into()?;
-    let signature = signature.try_into()?;
     verifying_key
         .verify(message, &signature)
         .map_err(|_| Error::General("Error verifying signature".to_string()))
@@ -578,32 +578,43 @@ fn aggregate<C: Ciphersuite>(
     signer_pubkeys: &[(Identifier, VerifyingShare)],
     verifying_key: &VerifyingKey,
 ) -> FrostResult<Signature> {
-    if signing_commitments
+    let signing_commitment_map =
+        create_frost_signing_commitments_from_bytes::<C>(signing_commitments)?;
+    if signing_commitment_map
         .iter()
-        .any(|(i, c)| (i.is_zero() | c.is_identity()).into())
-        | signature_shares
-            .iter()
-            .any(|(i, s)| (i.is_zero() | s.is_zero()).into())
-        | signer_pubkeys
-            .iter()
-            .any(|(i, s)| (i.is_zero() | s.is_identity()).into())
+        .any(|(i, c)| !i.is_valid() && !c.is_valid())
     {
         return Err(Error::General("Error aggregating signature".to_string()));
     }
-    if verifying_key.is_identity().into() {
+    let signature_shares_map = create_frost_signing_shares_from_bytes::<C>(signature_shares)?;
+    if signature_shares_map
+        .iter()
+        .any(|(i, s)| !i.is_valid() && !s.is_valid())
+    {
         return Err(Error::General("Error aggregating signature".to_string()));
     }
-    let signing_commitment_map =
-        create_frost_signing_commitments_from_bytes::<C>(signing_commitments)?;
-    let signature_shares_map = create_frost_signing_shares_from_bytes::<C>(signature_shares)?;
     let mut signer_pubkeys_map = BTreeMap::new();
     for (index, pubkey) in signer_pubkeys {
-        signer_pubkeys_map.insert(index.try_into()?, pubkey.try_into()?);
+        let index: frost_core::Identifier<C> = index.try_into()?;
+        let pubkey: frost_core::keys::VerifyingShare<C> = pubkey.try_into()?;
+        if !index.is_valid() && !pubkey.is_valid() {
+            return Err(Error::General("Error aggregating signature".to_string()));
+        }
+        signer_pubkeys_map.insert(index, pubkey);
     }
-    let verifying_key = verifying_key.try_into()?;
+    let verifying_key: frost_core::VerifyingKey<C> = verifying_key.try_into()?;
+    if !verifying_key.is_valid() {
+        return Err(Error::General("Error aggregating signature".to_string()));
+    }
     let pubkey_package =
         frost_core::keys::PublicKeyPackage::<C>::new(signer_pubkeys_map, verifying_key);
+    if !pubkey_package.is_valid() {
+        return Err(Error::General("Error aggregating signature".to_string()));
+    }
     let signing_package = frost_core::SigningPackage::<C>::new(signing_commitment_map, message);
+    if !signing_package.is_valid() {
+        return Err(Error::General("Error aggregating signature".to_string()));
+    }
     let res = frost_core::aggregate::<C>(&signing_package, &signature_shares_map, &pubkey_package);
     let signature = match res {
         Ok(s) => s,
@@ -618,23 +629,22 @@ fn round2<C: Ciphersuite>(
     signing_nonce: &SigningNonces,
     key_package: &KeyPackage,
 ) -> FrostResult<SignatureShare> {
-    if (key_package.secret_share.is_zero()
-        | key_package.verifying_key.is_identity()
-        | signing_nonce.is_zero())
-    .into()
-    {
+    let key_package: frost_core::keys::KeyPackage<C> = key_package.try_into()?;
+    if !key_package.is_valid() {
         return Err(Error::General("Error signing, bad inputs".to_string()));
     }
-    if signing_commitments
-        .iter()
-        .any(|(i, c)| (i.is_zero() | c.is_identity()).into())
-    {
+    let signing_nonces: frost_core::round1::SigningNonces<C> = signing_nonce.try_into()?;
+    if !signing_nonces.is_valid() {
         return Err(Error::General("Error signing, bad inputs".to_string()));
     }
-    let key_package = key_package.try_into()?;
-    let signing_nonces = signing_nonce.try_into()?;
     let signing_commitments_map =
         create_frost_signing_commitments_from_bytes::<C>(signing_commitments)?;
+    if signing_commitments_map
+        .iter()
+        .any(|(i, c)| !i.is_valid() && !c.is_valid())
+    {
+        return Err(Error::General("Error signing, bad inputs".to_string()));
+    }
     let signing_package = frost_core::SigningPackage::<C>::new(signing_commitments_map, message);
     let signature = frost_core::round2::sign::<C>(&signing_package, &signing_nonces, &key_package)
         .map_err(|_| Error::General("Error signing".to_string()))?;
@@ -645,7 +655,12 @@ fn round1<C: Ciphersuite, R: CryptoRng + RngCore>(
     secret: &SigningShare,
     rng: &mut R,
 ) -> FrostResult<(SigningNonces, SigningCommitments)> {
-    let signing_share = secret.try_into()?;
+    let signing_share: frost_core::keys::SigningShare<C> = secret.try_into()?;
+    if !signing_share.is_valid() {
+        return Err(Error::General(
+            "Error: signing share is invalid".to_string(),
+        ));
+    }
     let (signing_nonces, signing_commitments) =
         frost_core::round1::commit::<C, R>(&signing_share, rng);
     Ok((signing_nonces.into(), signing_commitments.into()))
@@ -656,7 +671,12 @@ fn preprocess<C: Ciphersuite, R: CryptoRng + RngCore>(
     secret: &SigningShare,
     rng: &mut R,
 ) -> FrostResult<(Vec<SigningNonces>, Vec<SigningCommitments>)> {
-    let signing_share = secret.try_into()?;
+    let signing_share: frost_core::keys::SigningShare<C> = secret.try_into()?;
+    if !signing_share.is_valid() {
+        return Err(Error::General(
+            "Error: signing share is invalid".to_string(),
+        ));
+    }
     let (signing_nonces, signing_commitments) =
         frost_core::round1::preprocess::<C, R>(count.get(), &signing_share, rng);
     Ok((

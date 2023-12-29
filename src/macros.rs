@@ -111,3 +111,51 @@ macro_rules! is_identity_impl {
         }
     };
 }
+
+macro_rules! from_impl {
+    ($name:ident) => {
+        impl From<&$name> for Vec<u8> {
+            fn from(value: &$name) -> Self {
+                serde_bare::to_vec(value).unwrap()
+            }
+        }
+
+        impl From<$name> for Vec<u8> {
+            fn from(value: $name) -> Self {
+                Self::from(&value)
+            }
+        }
+
+        impl TryFrom<Vec<u8>> for $name {
+            type Error = crate::Error;
+
+            fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+                Self::try_from(value.as_slice())
+            }
+        }
+
+        impl TryFrom<&Vec<u8>> for $name {
+            type Error = crate::Error;
+
+            fn try_from(value: &Vec<u8>) -> Result<Self, Self::Error> {
+                Self::try_from(value.as_slice())
+            }
+        }
+
+        impl TryFrom<Box<[u8]>> for $name {
+            type Error = crate::Error;
+
+            fn try_from(value: Box<[u8]>) -> Result<Self, Self::Error> {
+                Self::try_from(value.as_ref())
+            }
+        }
+
+        impl TryFrom<&[u8]> for $name {
+            type Error = crate::Error;
+
+            fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+                serde_bare::from_slice(value).map_err(|e| Error::General(e.to_string()))
+            }
+        }
+    };
+}

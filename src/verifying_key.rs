@@ -462,14 +462,14 @@ impl TryFrom<&VerifyingKey> for p384::AffinePoint {
     }
 }
 
-impl From<ed448_goldilocks::curve::edwards::CompressedEdwardsY> for VerifyingKey {
-    fn from(s: ed448_goldilocks::curve::edwards::CompressedEdwardsY) -> Self {
+impl From<ed448_goldilocks::CompressedEdwardsY> for VerifyingKey {
+    fn from(s: ed448_goldilocks::CompressedEdwardsY) -> Self {
         Self::from(&s)
     }
 }
 
-impl From<&ed448_goldilocks::curve::edwards::CompressedEdwardsY> for VerifyingKey {
-    fn from(s: &ed448_goldilocks::curve::edwards::CompressedEdwardsY) -> Self {
+impl From<&ed448_goldilocks::CompressedEdwardsY> for VerifyingKey {
+    fn from(s: &ed448_goldilocks::CompressedEdwardsY) -> Self {
         Self {
             scheme: Scheme::Ed448Shake256,
             value: s.0.to_vec(),
@@ -477,7 +477,7 @@ impl From<&ed448_goldilocks::curve::edwards::CompressedEdwardsY> for VerifyingKe
     }
 }
 
-impl TryFrom<VerifyingKey> for ed448_goldilocks::curve::edwards::CompressedEdwardsY {
+impl TryFrom<VerifyingKey> for ed448_goldilocks::CompressedEdwardsY {
     type Error = Error;
 
     fn try_from(value: VerifyingKey) -> Result<Self, Self::Error> {
@@ -485,7 +485,7 @@ impl TryFrom<VerifyingKey> for ed448_goldilocks::curve::edwards::CompressedEdwar
     }
 }
 
-impl TryFrom<&VerifyingKey> for ed448_goldilocks::curve::edwards::CompressedEdwardsY {
+impl TryFrom<&VerifyingKey> for ed448_goldilocks::CompressedEdwardsY {
     type Error = Error;
 
     fn try_from(value: &VerifyingKey) -> Result<Self, Self::Error> {
@@ -494,24 +494,19 @@ impl TryFrom<&VerifyingKey> for ed448_goldilocks::curve::edwards::CompressedEdwa
                 "Ciphersuite does not match verifying key".to_string(),
             ));
         }
-        let mut bytes = [0u8; 57];
-        bytes.copy_from_slice(&value.value);
-        let pt = ed448_goldilocks::curve::edwards::CompressedEdwardsY(bytes);
-        let _ = pt.decompress().ok_or(Error::General(
-            "Error converting verifying key from bytes".to_string(),
-        ))?;
-        Ok(pt)
+        Self::try_from(&value.value[..])
+            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))
     }
 }
 
-impl From<ed448_goldilocks::curve::edwards::ExtendedPoint> for VerifyingKey {
-    fn from(s: ed448_goldilocks::curve::edwards::ExtendedPoint) -> Self {
+impl From<ed448_goldilocks::EdwardsPoint> for VerifyingKey {
+    fn from(s: ed448_goldilocks::EdwardsPoint) -> Self {
         Self::from(&s)
     }
 }
 
-impl From<&ed448_goldilocks::curve::edwards::ExtendedPoint> for VerifyingKey {
-    fn from(s: &ed448_goldilocks::curve::edwards::ExtendedPoint) -> Self {
+impl From<&ed448_goldilocks::EdwardsPoint> for VerifyingKey {
+    fn from(s: &ed448_goldilocks::EdwardsPoint) -> Self {
         Self {
             scheme: Scheme::Ed448Shake256,
             value: s.compress().0.to_vec(),
@@ -519,7 +514,7 @@ impl From<&ed448_goldilocks::curve::edwards::ExtendedPoint> for VerifyingKey {
     }
 }
 
-impl TryFrom<VerifyingKey> for ed448_goldilocks::curve::edwards::ExtendedPoint {
+impl TryFrom<VerifyingKey> for ed448_goldilocks::EdwardsPoint {
     type Error = Error;
 
     fn try_from(value: VerifyingKey) -> Result<Self, Self::Error> {
@@ -527,7 +522,7 @@ impl TryFrom<VerifyingKey> for ed448_goldilocks::curve::edwards::ExtendedPoint {
     }
 }
 
-impl TryFrom<&VerifyingKey> for ed448_goldilocks::curve::edwards::ExtendedPoint {
+impl TryFrom<&VerifyingKey> for ed448_goldilocks::EdwardsPoint {
     type Error = Error;
 
     fn try_from(value: &VerifyingKey) -> Result<Self, Self::Error> {
@@ -536,12 +531,8 @@ impl TryFrom<&VerifyingKey> for ed448_goldilocks::curve::edwards::ExtendedPoint 
                 "Ciphersuite does not match verifying key".to_string(),
             ));
         }
-        let mut bytes = [0u8; 57];
-        bytes.copy_from_slice(&value.value);
-        let pt = ed448_goldilocks::curve::edwards::CompressedEdwardsY(bytes);
-        pt.decompress().ok_or(Error::General(
-            "Error converting verifying key from bytes".to_string(),
-        ))
+        Self::try_from(&value.value[..])
+            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))
     }
 }
 
@@ -721,6 +712,7 @@ impl TryFrom<&VerifyingKey> for vsss_rs::curve25519::WrappedRistretto {
     }
 }
 
+from_impl!(VerifyingKey);
 serde_impl!(VerifyingKey, compressed_point_len, 58);
 display_impl!(VerifyingKey);
 
@@ -862,20 +854,20 @@ mod tests {
     fn convert_ed448() {
         const SCHEME: Scheme = Scheme::Ed448Shake256;
 
-        let value = ed448_goldilocks::constants::GOLDILOCKS_BASE_POINT;
+        let value = ed448_goldilocks::EdwardsPoint::GENERATOR;
         let vk = VerifyingKey::from(&value);
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
-        let res = ed448_goldilocks::curve::edwards::ExtendedPoint::try_from(&vk);
+        let res = ed448_goldilocks::EdwardsPoint::try_from(&vk);
         assert!(res.is_ok());
         let vk2 = res.unwrap();
         assert_eq!(vk2, value);
 
-        let value = ed448_goldilocks::constants::GOLDILOCKS_BASE_POINT.compress();
+        let value = ed448_goldilocks::CompressedEdwardsY::GENERATOR;
         let vk = VerifyingKey::from(&value);
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
-        let res = ed448_goldilocks::curve::edwards::CompressedEdwardsY::try_from(&vk);
+        let res = ed448_goldilocks::CompressedEdwardsY::try_from(&vk);
         assert!(res.is_ok());
     }
 

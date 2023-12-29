@@ -56,6 +56,8 @@ impl<C: Ciphersuite> TryFrom<&KeyPackage> for frost_core::keys::KeyPackage<C> {
     }
 }
 
+from_impl!(KeyPackage);
+
 impl Display for KeyPackage {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(

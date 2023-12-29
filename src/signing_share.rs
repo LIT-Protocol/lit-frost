@@ -235,8 +235,8 @@ impl TryFrom<&SigningShare> for ed448_goldilocks::Scalar {
                 "Signing share scheme does not match ciphersuite".to_string(),
             ));
         }
-        let bytes = <[u8; 57]>::try_from(value.value.as_slice()).unwrap();
-        ed448_goldilocks::Scalar::from_canonical_bytes(bytes)
+        let bytes = ed448_goldilocks::ScalarBytes::clone_from_slice(value.value.as_slice());
+        Option::from(ed448_goldilocks::Scalar::from_canonical_bytes(&bytes))
             .ok_or(Error::General("Error converting signing share".to_string()))
     }
 }
@@ -308,6 +308,7 @@ impl TryFrom<&SigningShare> for jubjub::Scalar {
     }
 }
 
+from_impl!(SigningShare);
 serde_impl!(SigningShare, scalar_len, 58);
 display_impl!(SigningShare);
 

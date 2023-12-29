@@ -115,6 +115,8 @@ impl<'de> Deserialize<'de> for Identifier {
     }
 }
 
+from_impl!(Identifier);
+
 impl Identifier {
     pub fn is_zero(&self) -> subtle::Choice {
         let i = self.id as i8;

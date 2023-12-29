@@ -43,6 +43,7 @@ impl<C: Ciphersuite> TryFrom<&SigningCommitments> for frost_core::round1::Signin
     }
 }
 
+from_impl!(SigningCommitments);
 serde_impl!(SigningCommitments, commitment_len, 120);
 display_impl!(SigningCommitments);
 

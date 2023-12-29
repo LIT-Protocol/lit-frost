@@ -45,6 +45,7 @@ impl<C: Ciphersuite> TryFrom<&VerifyingShare> for frost_core::keys::VerifyingSha
     }
 }
 
+from_impl!(VerifyingShare);
 serde_impl!(VerifyingShare, compressed_point_len, 58);
 display_impl!(VerifyingShare);
 
