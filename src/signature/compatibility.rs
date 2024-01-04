@@ -305,22 +305,22 @@ mod tests {
 
         let (mut secret_shares, mut verifying_key) = SCHEME.generate_with_trusted_dealer(2, 3, &mut rng).unwrap();
 
-        if verifying_key.value[0] == 0x2 {
-            let mut shares = secret_shares.iter().map(|(i, s)| {
-                <Vec<u8> as vsss_rs::Share>::with_identifier_and_value(i.id, s.value.as_slice())
-            }).collect::<Vec<Vec<u8>>>();
-            let mut secret = vsss_rs::combine_shares::<Scalar, u8, Vec<u8>>(shares.as_slice()).unwrap();
-            secret = -secret;
-            let pk = ProjectivePoint::GENERATOR * secret;
-            verifying_key = (SCHEME, pk).into();
-            shares = vsss_rs::shamir::split_secret(2, 3, secret, &mut rng).unwrap();
-            secret_shares = shares.iter().map(|s| {
-                let i: Identifier = (SCHEME, s[0]).into();
-                let ss = s.as_field_element::<Scalar>().unwrap();
-                let sss: SigningShare = (SCHEME, ss).into();
-                (i, sss)
-            }).collect();
-        }
+        // if verifying_key.value[0] == 0x2 {
+        //     let mut shares = secret_shares.iter().map(|(i, s)| {
+        //         <Vec<u8> as vsss_rs::Share>::with_identifier_and_value(i.id, s.value.as_slice())
+        //     }).collect::<Vec<Vec<u8>>>();
+        //     let mut secret = vsss_rs::combine_shares::<Scalar, u8, Vec<u8>>(shares.as_slice()).unwrap();
+        //     secret = -secret;
+        //     let pk = ProjectivePoint::GENERATOR * secret;
+        //     verifying_key = (SCHEME, pk).into();
+        //     shares = vsss_rs::shamir::split_secret(2, 3, secret, &mut rng).unwrap();
+        //     secret_shares = shares.iter().map(|s| {
+        //         let i: Identifier = (SCHEME, s[0]).into();
+        //         let ss = s.as_field_element::<Scalar>().unwrap();
+        //         let sss: SigningShare = (SCHEME, ss).into();
+        //         (i, sss)
+        //     }).collect();
+        // }
 
         println!("verifying key {}", hex::encode(verifying_key.value.as_slice()));
         let vk = k256::schnorr::VerifyingKey::try_from(&verifying_key).unwrap();

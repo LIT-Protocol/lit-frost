@@ -640,6 +640,7 @@ pub enum FrostDkgParameters {
     P256Sha256(gennaro_dkg::Parameters<p256::ProjectivePoint>),
     P384Sha384(gennaro_dkg::Parameters<p384::ProjectivePoint>),
     RedJubjubBlake2b512(gennaro_dkg::Parameters<jubjub::SubgroupPoint>),
+    /// Experimental
     K256Taproot(gennaro_dkg::Parameters<k256::ProjectivePoint>),
 }
 
