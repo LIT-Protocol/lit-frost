@@ -18,6 +18,12 @@ impl Display for Identifier {
     }
 }
 
+impl From<(Scheme, u8)> for Identifier {
+    fn from((scheme, id): (Scheme, u8)) -> Self {
+        Self { scheme, id }
+    }
+}
+
 impl<C: Ciphersuite> From<frost_core::Identifier<C>> for Identifier {
     fn from(s: frost_core::Identifier<C>) -> Self {
         Self::from(&s)
@@ -54,6 +60,10 @@ impl<C: Ciphersuite> From<&frost_core::Identifier<C>> for Identifier {
             Scheme::RedJubjubBlake2b512 => Self {
                 scheme: Scheme::RedJubjubBlake2b512,
                 id: s.serialize().as_ref()[0],
+            },
+            Scheme::K256Taproot => Self {
+                scheme: Scheme::K256Taproot,
+                id: s.serialize().as_ref()[31],
             },
             Scheme::Unknown => panic!("Unknown ciphersuite"),
         }

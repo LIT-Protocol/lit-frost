@@ -102,6 +102,8 @@
 //! // Verify the signature
 //! scheme.verify(b"test", &group_key, &signature).unwrap();
 //! ```
+extern crate core;
+
 #[macro_use]
 mod macros;
 mod error;
@@ -158,6 +160,8 @@ pub enum Scheme {
     P384Sha384 = 6,
     /// Compute the RedJubjub schnorr signature using the Blake2b-512 hash function
     RedJubjubBlake2b512 = 7,
+    /// Compute the Secp256k1 schnorr signature using the taproot hash function
+    K256Taproot = 8,
 }
 
 impl Display for Scheme {
@@ -170,6 +174,7 @@ impl Display for Scheme {
             Self::P256Sha256 => write!(f, "P256Sha256"),
             Self::P384Sha384 => write!(f, "P384Sha384"),
             Self::RedJubjubBlake2b512 => write!(f, "RedJubjubBlake2b512"),
+            Self::K256Taproot => write!(f, "K256Taproot"),
             Self::Unknown => write!(f, "Unknown"),
         }
     }
@@ -191,6 +196,9 @@ impl FromStr for Scheme {
             "RedJubjubBlake2b512" | "FROST-RedJubjub-BLAKE2b-512-v1" => {
                 Ok(Self::RedJubjubBlake2b512)
             }
+            "K256Taproot" | "FROST-secp256k1-Taproot-v1" => {
+                Ok(Self::K256Taproot)
+            }
             _ => Err(Error::General(format!("Unknown scheme: {}", s))),
         }
     }
@@ -206,6 +214,7 @@ impl From<u8> for Scheme {
             5 => Self::P256Sha256,
             6 => Self::P384Sha384,
             7 => Self::RedJubjubBlake2b512,
+            8 => Self::K256Taproot,
             _ => Self::Unknown,
         }
     }
@@ -261,6 +270,7 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => {
                 preprocess::<frost_redjubjub::JubjubBlake2b512, R>(count, secret_share, rng)
             }
+            Self::K256Taproot => preprocess::<frost_taproot::Secp256K1Taproot, R>(count, secret_share, rng),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -283,6 +293,7 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => {
                 round1::<frost_redjubjub::JubjubBlake2b512, R>(secret_share, rng)
             }
+            Self::K256Taproot => round1::<frost_taproot::Secp256K1Taproot, R>(secret_share, rng),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -333,6 +344,12 @@ impl Scheme {
                 key_package,
             ),
             Self::RedJubjubBlake2b512 => round2::<frost_redjubjub::JubjubBlake2b512>(
+                message,
+                signing_commitments,
+                signing_nonce,
+                key_package,
+            ),
+            Self::K256Taproot => round2::<frost_taproot::Secp256K1Taproot>(
                 message,
                 signing_commitments,
                 signing_nonce,
@@ -401,6 +418,13 @@ impl Scheme {
                 signer_pubkeys,
                 verifying_key,
             ),
+            Self::K256Taproot => aggregate::<frost_taproot::Secp256K1Taproot>(
+                message,
+                signing_commitments,
+                signature_shares,
+                signer_pubkeys,
+                verifying_key,
+            ),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -430,6 +454,7 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => {
                 verify::<frost_redjubjub::JubjubBlake2b512>(message, verifying_key, signature)
             }
+            Self::K256Taproot => verify::<frost_taproot::Secp256K1Taproot>(message, verifying_key, signature),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -447,6 +472,7 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => {
                 verifying_share::<frost_redjubjub::JubjubBlake2b512>(signing_share)
             }
+            Self::K256Taproot => verifying_share::<frost_taproot::Secp256K1Taproot>(signing_share),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -493,6 +519,9 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => Ok(FrostDkgParameters::RedJubjubBlake2b512(
                 gennaro_dkg::Parameters::<jubjub::SubgroupPoint>::new(min_signers, max_signers),
             )),
+            Self::K256Taproot => Ok(FrostDkgParameters::K256Sha256(gennaro_dkg::Parameters::<
+                k256::ProjectivePoint,
+                >::new(min_signers, max_signers))),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -506,6 +535,7 @@ impl Scheme {
             Self::P256Sha256 => Ok(32),
             Self::P384Sha384 => Ok(48),
             Self::RedJubjubBlake2b512 => Ok(32),
+            Self::K256Taproot => Ok(32),
             Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
         }
     }
@@ -519,6 +549,7 @@ impl Scheme {
             Self::P256Sha256 => Ok(33),
             Self::P384Sha384 => Ok(49),
             Self::RedJubjubBlake2b512 => Ok(32),
+            Self::K256Taproot => Ok(33),
             Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
         }
     }
@@ -532,6 +563,7 @@ impl Scheme {
             Self::P256Sha256 => Ok(71),
             Self::P384Sha384 => Ok(103),
             Self::RedJubjubBlake2b512 => Ok(69),
+            Self::K256Taproot => Ok(71),
             Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
         }
     }
@@ -545,6 +577,7 @@ impl Scheme {
             Self::P256Sha256 => Ok(65),
             Self::P384Sha384 => Ok(97),
             Self::RedJubjubBlake2b512 => Ok(64),
+            Self::K256Taproot => Ok(64),
             Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
         }
     }
@@ -592,6 +625,7 @@ impl Scheme {
                 frost_redjubjub::JubjubBlake2b512,
                 R,
             >(min_signers, max_signers, rng),
+            Self::K256Taproot => generate_with_trusted_dealer::<frost_taproot::Secp256K1Taproot, R>(min_signers, max_signers, rng),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -606,6 +640,7 @@ pub enum FrostDkgParameters {
     P256Sha256(gennaro_dkg::Parameters<p256::ProjectivePoint>),
     P384Sha384(gennaro_dkg::Parameters<p384::ProjectivePoint>),
     RedJubjubBlake2b512(gennaro_dkg::Parameters<jubjub::SubgroupPoint>),
+    K256Taproot(gennaro_dkg::Parameters<k256::ProjectivePoint>),
 }
 
 fn verify<C: Ciphersuite>(
@@ -808,6 +843,7 @@ mod tests {
     #[case::p256(Scheme::P256Sha256, 32)]
     #[case::p384(Scheme::P384Sha384, 48)]
     #[case::redjubjub(Scheme::RedJubjubBlake2b512, 32)]
+    #[case::redjubjub(Scheme::K256Taproot, 32)]
     fn pregenerate(#[case] scheme: Scheme, #[case] length: usize) {
         let mut rng = rand::rngs::OsRng;
         let mut secret = SigningShare {
@@ -832,6 +868,7 @@ mod tests {
     #[case::p256(Scheme::P256Sha256)]
     #[case::p384(Scheme::P384Sha384)]
     #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
+    #[case::redjubjub(Scheme::K256Taproot)]
     fn rounds(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u8 = 3;
@@ -840,20 +877,20 @@ mod tests {
             .generate_with_trusted_dealer(THRESHOLD, 5, &mut rng)
             .unwrap();
 
-        let mut signing_pacakge = BTreeMap::new();
+        let mut signing_package = BTreeMap::new();
         let mut signing_commitments = Vec::new();
 
         for (id, secret_share) in secret_shares {
             let res = scheme.round1(&secret_share, &mut rng);
             assert!(res.is_ok());
             let (nonces, commitments) = res.unwrap();
-            signing_pacakge.insert(id, (nonces, secret_share));
+            signing_package.insert(id, (nonces, secret_share));
             signing_commitments.push((id, commitments));
         }
 
         let mut verifying_shares = Vec::new();
         let mut signature_shares = Vec::new();
-        for (id, (nonces, secret_share)) in signing_pacakge {
+        for (id, (nonces, secret_share)) in signing_package {
             let res = scheme.sign(
                 MSG,
                 &signing_commitments,
@@ -889,6 +926,7 @@ mod tests {
     #[case::p256(Scheme::P256Sha256)]
     #[case::p384(Scheme::P384Sha384)]
     #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
+    #[case::redjubjub(Scheme::K256Taproot)]
     fn full(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u8 = 3;

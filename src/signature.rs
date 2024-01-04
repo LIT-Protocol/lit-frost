@@ -1,3 +1,5 @@
+mod compatibility;
+
 use crate::{Error, Scheme};
 use frost_core::Ciphersuite;
 
