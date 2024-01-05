@@ -48,7 +48,7 @@ impl<C: Ciphersuite> TryFrom<&SignatureShare> for frost_core::round2::SignatureS
     }
 }
 
-from_impl!(SignatureShare);
+from_bytes_impl!(SignatureShare);
 serde_impl!(SignatureShare, scalar_len, 58);
 display_impl!(SignatureShare);
 

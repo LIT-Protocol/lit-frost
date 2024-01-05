@@ -45,7 +45,7 @@ impl<C: Ciphersuite> TryFrom<&VerifyingKey> for frost_core::VerifyingKey<C> {
     }
 }
 
-from_impl!(VerifyingKey);
+from_bytes_impl!(VerifyingKey);
 serde_impl!(VerifyingKey, compressed_point_len, 58);
 display_impl!(VerifyingKey);
 
@@ -83,7 +83,9 @@ mod tests {
         const SCHEME: Scheme = Scheme::K256Sha256;
 
         let value = k256::ProjectivePoint::GENERATOR;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = k256::ProjectivePoint::try_from(&vk);
@@ -92,7 +94,9 @@ mod tests {
         assert_eq!(vk2, value);
 
         let value = k256::AffinePoint::GENERATOR;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = k256::AffinePoint::try_from(&vk);
@@ -104,7 +108,9 @@ mod tests {
         const SCHEME: Scheme = Scheme::P256Sha256;
 
         let value = p256::ProjectivePoint::GENERATOR;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = p256::ProjectivePoint::try_from(&vk);
@@ -113,7 +119,9 @@ mod tests {
         assert_eq!(vk2, value);
 
         let value = p256::AffinePoint::GENERATOR;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = p256::AffinePoint::try_from(&vk);
@@ -125,7 +133,9 @@ mod tests {
         const SCHEME: Scheme = Scheme::P384Sha384;
 
         let value = p384::ProjectivePoint::GENERATOR;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = p384::ProjectivePoint::try_from(&vk);
@@ -134,7 +144,9 @@ mod tests {
         assert_eq!(vk2, value);
 
         let value = p384::AffinePoint::GENERATOR;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = p384::AffinePoint::try_from(&vk);
@@ -146,7 +158,9 @@ mod tests {
         const SCHEME: Scheme = Scheme::Ed25519Sha512;
 
         let value = curve25519_dalek::constants::ED25519_BASEPOINT_POINT;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = curve25519_dalek::EdwardsPoint::try_from(&vk);
@@ -155,7 +169,9 @@ mod tests {
         assert_eq!(vk2, value);
 
         let value = curve25519_dalek::constants::ED25519_BASEPOINT_COMPRESSED;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = curve25519_dalek::edwards::CompressedEdwardsY::try_from(&vk);
@@ -167,7 +183,9 @@ mod tests {
         const SCHEME: Scheme = Scheme::Ristretto25519Sha512;
 
         let value = curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = curve25519_dalek::RistrettoPoint::try_from(&vk);
@@ -176,7 +194,9 @@ mod tests {
         assert_eq!(vk2, value);
 
         let value = curve25519_dalek::constants::RISTRETTO_BASEPOINT_COMPRESSED;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = curve25519_dalek::ristretto::CompressedRistretto::try_from(&vk);
@@ -188,7 +208,9 @@ mod tests {
         const SCHEME: Scheme = Scheme::Ed448Shake256;
 
         let value = ed448_goldilocks::EdwardsPoint::GENERATOR;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = ed448_goldilocks::EdwardsPoint::try_from(&vk);
@@ -197,7 +219,9 @@ mod tests {
         assert_eq!(vk2, value);
 
         let value = ed448_goldilocks::CompressedEdwardsY::GENERATOR;
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = ed448_goldilocks::CompressedEdwardsY::try_from(&vk);
@@ -211,7 +235,9 @@ mod tests {
         const SCHEME: Scheme = Scheme::RedJubjubBlake2b512;
 
         let value = jubjub::ExtendedPoint::generator();
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = jubjub::ExtendedPoint::try_from(&vk);
@@ -220,14 +246,18 @@ mod tests {
         assert_eq!(vk2, value);
 
         let value = jubjub::AffinePoint::generator();
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = jubjub::AffinePoint::try_from(&vk);
         assert!(res.is_ok());
 
         let value = jubjub::SubgroupPoint::generator();
-        let vk = VerifyingKey::from(&value);
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
         let res = jubjub::SubgroupPoint::try_from(&vk);

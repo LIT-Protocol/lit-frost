@@ -112,7 +112,7 @@ macro_rules! is_identity_impl {
     };
 }
 
-macro_rules! from_impl {
+macro_rules! from_bytes_impl {
     ($name:ident) => {
         impl From<&$name> for Vec<u8> {
             fn from(value: &$name) -> Self {
@@ -155,6 +155,43 @@ macro_rules! from_impl {
 
             fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
                 serde_bare::from_slice(value).map_err(|e| Error::General(e.to_string()))
+            }
+        }
+    };
+}
+
+macro_rules! try_from_scheme_ref {
+    ($path:path, $name:ident, $op:expr) => {
+        impl TryFrom<$name> for $path {
+            type Error = crate::Error;
+
+            fn try_from(value: $name) -> Result<Self, Self::Error> {
+                Self::try_from(&value)
+            }
+        }
+
+        impl TryFrom<&$name> for $path {
+            type Error = crate::Error;
+
+            fn try_from(value: &$name) -> Result<Self, Self::Error> {
+                $op(value)
+            }
+        }
+    };
+    ($name:ident, $path:path, $op:expr) => {
+        impl TryFrom<(Scheme, $path)> for $name {
+            type Error = crate::Error;
+
+            fn try_from((scheme, value): (Scheme, $path)) -> Result<Self, Self::Error> {
+                Self::try_from((scheme, &value))
+            }
+        }
+
+        impl TryFrom<(Scheme, &$path)> for $name {
+            type Error = crate::Error;
+
+            fn try_from((scheme, value): (Scheme, &$path)) -> Result<Self, Self::Error> {
+                $op(scheme, value)
             }
         }
     };

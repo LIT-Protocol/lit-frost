@@ -8,26 +8,16 @@ anyhow = "1.0"
 curve25519-dalek = { version = "=4.1.1", features = ["rand_core"] }
 ed25519-dalek = "2.1"
 ed448-goldilocks = { version = "0.11", package = "ed448-goldilocks-plus" }
-#frost-core = { version = "1.0.0-rc.0", features = ["internals"], git = "https://github.com/LIT-Protocol/frost.git" }
-#frost-ed25519 = { version =  "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
-#frost-ed448 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
-#frost-p256 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
-#frost-p384 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
-#frost-redjubjub = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
-#frost-rerandomized = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
-#frost-ristretto255 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
-#frost-secp256k1 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
-#frost-taproot = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
-frost-core = { version = "1.0.0-rc.0", features = ["internals"], path = "../frost/frost-core" }
-frost-ed25519 = { version =  "1.0.0-rc.0", path = "../frost/frost-ed25519" }
-frost-ed448 = { version = "1.0.0-rc.0", path = "../frost/frost-ed448" }
-frost-p256 = { version = "1.0.0-rc.0", path = "../frost/frost-p256" }
-frost-p384 = { version = "1.0.0-rc.0", path = "../frost/frost-p384" }
-frost-redjubjub = { version = "1.0.0-rc.0", path = "../frost/frost-redjubjub" }
-frost-rerandomized = { version = "1.0.0-rc.0", path = "../frost/frost-rerandomized" }
-frost-ristretto255 = { version = "1.0.0-rc.0", path = "../frost/frost-ristretto255" }
-frost-secp256k1 = { version = "1.0.0-rc.0", path = "../frost/frost-secp256k1" }
-frost-taproot = { version = "1.0.0-rc.0", path = "../frost/frost-taproot" }
+frost-core = { version = "1.0.0-rc.0", features = ["internals"], git = "https://github.com/LIT-Protocol/frost.git" }
+frost-ed25519 = { version =  "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
+frost-ed448 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
+frost-p256 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
+frost-p384 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
+frost-redjubjub = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
+frost-rerandomized = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
+frost-ristretto255 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
+frost-secp256k1 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
+frost-taproot = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 gennaro-dkg = "0.8"
 hex = "0.4"
 jubjub = { version = "0.10", git = "https://github.com/LIT-Protocol/jubjub.git" }

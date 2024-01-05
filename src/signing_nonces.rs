@@ -176,7 +176,7 @@ impl Display for SigningNonces {
     }
 }
 
-from_impl!(SigningNonces);
+from_bytes_impl!(SigningNonces);
 
 impl SigningNonces {
     /// Return true if the nonces are valid aka not zero

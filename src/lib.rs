@@ -13,11 +13,11 @@
 //! performed by the signers to generate [`SigningNonces`] and
 //! [`SigningCommitments`]. Signers can either generate these values
 //! in advance using [`Scheme::pregenerate_signing_nonces`] or generate them
-//! on the fly using [`Scheme::round1`]. [`Scheme::round1`] only generates
+//! on the fly using [`Scheme::signing_round1`]. [`Scheme::signing_round1`] only generates
 //! one nonce and commitment to will be used immediately.
 //!
 //! The second round is performed by the signers to generate a
-//! [`SignatureShare`]. [`Scheme::sign`] performs the second round of the
+//! [`SignatureShare`]. [`Scheme::signing_round2`] performs the second round of the
 //! signing protocol and generates a [`SignatureShare`].
 //!
 //! The [`SignatureShare`]s can then be aggregated into a single
@@ -57,11 +57,11 @@
 //!    scheme,
 //!   value: shares[1].value().to_vec(),
 //! };
-//! let group_key = VerifyingKey::from(pubkey);
+//! let group_key = VerifyingKey::try_from((scheme, pubkey)).unwrap();
 //!
 //!
-//! let (nonces1, commitments1) = scheme.round1(&share1, &mut OsRng).unwrap();
-//! let (nonces2, commitments2) = scheme.round1(&share2, &mut OsRng).unwrap();
+//! let (nonces1, commitments1) = scheme.signing_round1(&share1, &mut OsRng).unwrap();
+//! let (nonces2, commitments2) = scheme.signing_round1(&share2, &mut OsRng).unwrap();
 //!
 //! // Signer 1 sends signer 2 their signing commitments
 //! // Signer 2 sends signer 1 their signing commitments
@@ -83,8 +83,8 @@
 //!
 //! let signing_commitments = vec![(key_package1.identifier, commitments1), (key_package2.identifier, commitments2)];
 //!
-//! let signature_share1 = scheme.sign(b"test", &signing_commitments, &nonces1, &key_package1).unwrap();
-//! let signature_share2 = scheme.sign(b"test", &signing_commitments, &nonces2, &key_package2).unwrap();
+//! let signature_share1 = scheme.signing_round2(b"test", &signing_commitments, &nonces1, &key_package1).unwrap();
+//! let signature_share2 = scheme.signing_round2(b"test", &signing_commitments, &nonces2, &key_package2).unwrap();
 //!
 //! // Verifying shares are public and can be sent to anyone
 //! let verifying_share1 = scheme.verifying_share(&share1).unwrap();
@@ -132,6 +132,7 @@ use core::num::NonZeroU8;
 use frost_core::Ciphersuite;
 use rand_core::{CryptoRng, RngCore};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use sha2::{Digest, Sha256};
 use std::num::NonZeroUsize;
 use std::{
     collections::BTreeMap,
@@ -196,9 +197,7 @@ impl FromStr for Scheme {
             "RedJubjubBlake2b512" | "FROST-RedJubjub-BLAKE2b-512-v1" => {
                 Ok(Self::RedJubjubBlake2b512)
             }
-            "K256Taproot" | "FROST-secp256k1-Taproot-v1" => {
-                Ok(Self::K256Taproot)
-            }
+            "K256Taproot" | "FROST-secp256k1-Taproot-v1" => Ok(Self::K256Taproot),
             _ => Err(Error::General(format!("Unknown scheme: {}", s))),
         }
     }
@@ -270,13 +269,15 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => {
                 preprocess::<frost_redjubjub::JubjubBlake2b512, R>(count, secret_share, rng)
             }
-            Self::K256Taproot => preprocess::<frost_taproot::Secp256K1Taproot, R>(count, secret_share, rng),
+            Self::K256Taproot => {
+                preprocess::<frost_taproot::Secp256K1Taproot, R>(count, secret_share, rng)
+            }
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
 
     /// Compute the first round of the signing protocol if no pregenerated nonces and commitments are available.
-    pub fn round1<R: CryptoRng + RngCore>(
+    pub fn signing_round1<R: CryptoRng + RngCore>(
         &self,
         secret_share: &SigningShare,
         rng: &mut R,
@@ -299,7 +300,7 @@ impl Scheme {
     }
 
     /// Compute the second round of the signing protocol and generate a signature.
-    pub fn sign(
+    pub fn signing_round2(
         &self,
         message: &[u8],
         signing_commitments: &[(Identifier, SigningCommitments)],
@@ -350,7 +351,7 @@ impl Scheme {
                 key_package,
             ),
             Self::K256Taproot => round2::<frost_taproot::Secp256K1Taproot>(
-                message,
+                Sha256::digest(message).as_slice(),
                 signing_commitments,
                 signing_nonce,
                 key_package,
@@ -419,7 +420,7 @@ impl Scheme {
                 verifying_key,
             ),
             Self::K256Taproot => aggregate::<frost_taproot::Secp256K1Taproot>(
-                message,
+                Sha256::digest(message).as_slice(),
                 signing_commitments,
                 signature_shares,
                 signer_pubkeys,
@@ -454,7 +455,11 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => {
                 verify::<frost_redjubjub::JubjubBlake2b512>(message, verifying_key, signature)
             }
-            Self::K256Taproot => verify::<frost_taproot::Secp256K1Taproot>(message, verifying_key, signature),
+            Self::K256Taproot => verify::<frost_taproot::Secp256K1Taproot>(
+                Sha256::digest(message).as_slice(),
+                verifying_key,
+                signature,
+            ),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
@@ -477,54 +482,166 @@ impl Scheme {
         }
     }
 
-    pub fn get_dkg_params(
+    pub fn get_dkg_secret_participant(
         &self,
+        id: NonZeroUsize,
         min_signers: NonZeroUsize,
         max_signers: NonZeroUsize,
-    ) -> FrostResult<FrostDkgParameters> {
+    ) -> FrostResult<FrostDkgSecretParticipant> {
         match self {
-            Self::Ed25519Sha512 => Ok(FrostDkgParameters::Ed25519Sha512(
-                gennaro_dkg::Parameters::<vsss_rs::curve25519::WrappedEdwards>::new(
-                    min_signers,
-                    max_signers,
-                ),
+            Self::Ed25519Sha512 => Ok(FrostDkgSecretParticipant::Ed25519Sha512(
+                gennaro_dkg::SecretParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<vsss_rs::curve25519::WrappedEdwards>::new(
+                        min_signers,
+                        max_signers,
+                    ),
+                )?,
             )),
-            Self::Ed448Shake256 => Ok(FrostDkgParameters::Ed448Shake256(
-                gennaro_dkg::Parameters::<ed448_goldilocks::EdwardsPoint>::new(
-                    min_signers,
-                    max_signers,
-                ),
+            Self::Ed448Shake256 => Ok(FrostDkgSecretParticipant::Ed448Shake256(
+                gennaro_dkg::SecretParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<ed448_goldilocks::EdwardsPoint>::new(
+                        min_signers,
+                        max_signers,
+                    ),
+                )?,
             )),
-            Self::Ristretto25519Sha512 => Ok(FrostDkgParameters::Ristretto25519Sha512(
-                gennaro_dkg::Parameters::<vsss_rs::curve25519::WrappedRistretto>::new(
-                    min_signers,
-                    max_signers,
-                ),
+            Self::Ristretto25519Sha512 => Ok(FrostDkgSecretParticipant::Ristretto25519Sha512(
+                gennaro_dkg::SecretParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<vsss_rs::curve25519::WrappedRistretto>::new(
+                        min_signers,
+                        max_signers,
+                    ),
+                )?,
             )),
-            Self::K256Sha256 => Ok(FrostDkgParameters::K256Sha256(gennaro_dkg::Parameters::<
-                k256::ProjectivePoint,
-            >::new(
-                min_signers, max_signers
-            ))),
-            Self::P256Sha256 => Ok(FrostDkgParameters::P256Sha256(gennaro_dkg::Parameters::<
-                p256::ProjectivePoint,
-            >::new(
-                min_signers, max_signers
-            ))),
-            Self::P384Sha384 => Ok(FrostDkgParameters::P384Sha384(gennaro_dkg::Parameters::<
-                p384::ProjectivePoint,
-            >::new(
-                min_signers, max_signers
-            ))),
-            Self::RedJubjubBlake2b512 => Ok(FrostDkgParameters::RedJubjubBlake2b512(
-                gennaro_dkg::Parameters::<jubjub::SubgroupPoint>::new(min_signers, max_signers),
+            Self::K256Sha256 => Ok(FrostDkgSecretParticipant::K256Sha256(
+                gennaro_dkg::SecretParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<k256::ProjectivePoint>::new(min_signers, max_signers),
+                )?,
             )),
-            Self::K256Taproot => Ok(FrostDkgParameters::K256Sha256(gennaro_dkg::Parameters::<
-                k256::ProjectivePoint,
-                >::new(min_signers, max_signers))),
+            Self::P256Sha256 => Ok(FrostDkgSecretParticipant::P256Sha256(
+                gennaro_dkg::SecretParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<p256::ProjectivePoint>::new(min_signers, max_signers),
+                )?,
+            )),
+            Self::P384Sha384 => Ok(FrostDkgSecretParticipant::P384Sha384(
+                gennaro_dkg::SecretParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<p384::ProjectivePoint>::new(min_signers, max_signers),
+                )?,
+            )),
+            Self::RedJubjubBlake2b512 => Ok(FrostDkgSecretParticipant::RedJubjubBlake2b512(
+                gennaro_dkg::SecretParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<jubjub::SubgroupPoint>::new(min_signers, max_signers),
+                )?,
+            )),
+            Self::K256Taproot => Ok(FrostDkgSecretParticipant::K256Sha256(
+                gennaro_dkg::SecretParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<k256::ProjectivePoint>::new(min_signers, max_signers),
+                )?,
+            )),
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
+
+    pub fn get_dkg_refresh_participant(
+        &self,
+        id: NonZeroUsize,
+        min_signers: NonZeroUsize,
+        max_signers: NonZeroUsize,
+    ) -> FrostResult<FrostDkgRefreshParticipant> {
+        match self {
+            Self::Ed25519Sha512 => Ok(FrostDkgRefreshParticipant::Ed25519Sha512(
+                gennaro_dkg::RefreshParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<vsss_rs::curve25519::WrappedEdwards>::new(
+                        min_signers,
+                        max_signers,
+                    ),
+                )?,
+            )),
+            Self::Ed448Shake256 => Ok(FrostDkgRefreshParticipant::Ed448Shake256(
+                gennaro_dkg::RefreshParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<ed448_goldilocks::EdwardsPoint>::new(
+                        min_signers,
+                        max_signers,
+                    ),
+                )?,
+            )),
+            Self::Ristretto25519Sha512 => Ok(FrostDkgRefreshParticipant::Ristretto25519Sha512(
+                gennaro_dkg::RefreshParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<vsss_rs::curve25519::WrappedRistretto>::new(
+                        min_signers,
+                        max_signers,
+                    ),
+                )?,
+            )),
+            Self::K256Sha256 => Ok(FrostDkgRefreshParticipant::K256Sha256(
+                gennaro_dkg::RefreshParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<k256::ProjectivePoint>::new(min_signers, max_signers),
+                )?,
+            )),
+            Self::P256Sha256 => Ok(FrostDkgRefreshParticipant::P256Sha256(
+                gennaro_dkg::RefreshParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<p256::ProjectivePoint>::new(min_signers, max_signers),
+                )?,
+            )),
+            Self::P384Sha384 => Ok(FrostDkgRefreshParticipant::P384Sha384(
+                gennaro_dkg::RefreshParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<p384::ProjectivePoint>::new(min_signers, max_signers),
+                )?,
+            )),
+            Self::RedJubjubBlake2b512 => Ok(FrostDkgRefreshParticipant::RedJubjubBlake2b512(
+                gennaro_dkg::RefreshParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<jubjub::SubgroupPoint>::new(min_signers, max_signers),
+                )?,
+            )),
+            Self::K256Taproot => Ok(FrostDkgRefreshParticipant::K256Sha256(
+                gennaro_dkg::RefreshParticipant::new(
+                    id,
+                    gennaro_dkg::Parameters::<k256::ProjectivePoint>::new(min_signers, max_signers),
+                )?,
+            )),
+            Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
+        }
+    }
+
+    // pub fn get_dkg_reshare_participant(
+    //     &self,
+    //     id: NonZeroUsize,
+    //     min_signers: NonZeroUsize,
+    //     max_signers: NonZeroUsize,
+    //     secret_share: &SigningShare,
+    //     share_ids: &[Identifier],
+    // ) -> FrostResult<FrostDkgSecretParticipant> {
+    //     if secret_share.scheme != *self {
+    //         return Err(Error::General("Secret share scheme does not match ciphersuite".to_string()));
+    //     }
+    //     match self {
+    //         Self::Ed25519Sha512 => {
+    //             let share: curve25519_dalek::Scalar = secret_share.try_into()?;
+    //
+    //             Ok(FrostDkgSecretParticipant::Ed25519Sha512(
+    //                 gennaro_dkg::SecretParticipant::with_secret(id, gennaro_dkg::Parameters::<vsss_rs::curve25519::WrappedEdwards>::new(
+    //                     min_signers,
+    //                     max_signers,
+    //                 ))?
+    //             ))
+    //         }
+    //     }
+    // }
 
     pub(crate) fn scalar_len(&self) -> FrostResult<usize> {
         match self {
@@ -625,24 +742,95 @@ impl Scheme {
                 frost_redjubjub::JubjubBlake2b512,
                 R,
             >(min_signers, max_signers, rng),
-            Self::K256Taproot => generate_with_trusted_dealer::<frost_taproot::Secp256K1Taproot, R>(min_signers, max_signers, rng),
+            Self::K256Taproot => {
+                generate_with_trusted_dealer::<frost_taproot::Secp256K1Taproot, R>(
+                    min_signers,
+                    max_signers,
+                    rng,
+                )
+            }
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
 }
 
+// /// The DKG parameters for FROST and the associated ciphersuites
+// #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+// pub enum FrostDkgParameters {
+//     Ed25519Sha512(gennaro_dkg::Parameters<vsss_rs::curve25519::WrappedEdwards>),
+//     Ed448Shake256(gennaro_dkg::Parameters<ed448_goldilocks::EdwardsPoint>),
+//     Ristretto25519Sha512(gennaro_dkg::Parameters<vsss_rs::curve25519::WrappedRistretto>),
+//     K256Sha256(gennaro_dkg::Parameters<k256::ProjectivePoint>),
+//     P256Sha256(gennaro_dkg::Parameters<p256::ProjectivePoint>),
+//     P384Sha384(gennaro_dkg::Parameters<p384::ProjectivePoint>),
+//     RedJubjubBlake2b512(gennaro_dkg::Parameters<jubjub::SubgroupPoint>),
+//     K256Taproot(gennaro_dkg::Parameters<k256::ProjectivePoint>),
+// }
+//
+/// The gennaro DKG frost secret participant
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum FrostDkgParameters {
-    Ed25519Sha512(gennaro_dkg::Parameters<vsss_rs::curve25519::WrappedEdwards>),
-    Ed448Shake256(gennaro_dkg::Parameters<ed448_goldilocks::EdwardsPoint>),
-    Ristretto25519Sha512(gennaro_dkg::Parameters<vsss_rs::curve25519::WrappedRistretto>),
-    K256Sha256(gennaro_dkg::Parameters<k256::ProjectivePoint>),
-    P256Sha256(gennaro_dkg::Parameters<p256::ProjectivePoint>),
-    P384Sha384(gennaro_dkg::Parameters<p384::ProjectivePoint>),
-    RedJubjubBlake2b512(gennaro_dkg::Parameters<jubjub::SubgroupPoint>),
-    /// Experimental
-    K256Taproot(gennaro_dkg::Parameters<k256::ProjectivePoint>),
+pub enum FrostDkgSecretParticipant {
+    Ed25519Sha512(gennaro_dkg::SecretParticipant<vsss_rs::curve25519::WrappedEdwards>),
+    Ed448Shake256(gennaro_dkg::SecretParticipant<ed448_goldilocks::EdwardsPoint>),
+    Ristretto25519Sha512(gennaro_dkg::SecretParticipant<vsss_rs::curve25519::WrappedRistretto>),
+    K256Sha256(gennaro_dkg::SecretParticipant<k256::ProjectivePoint>),
+    P256Sha256(gennaro_dkg::SecretParticipant<p256::ProjectivePoint>),
+    P384Sha384(gennaro_dkg::SecretParticipant<p384::ProjectivePoint>),
+    RedJubjubBlake2b512(gennaro_dkg::SecretParticipant<jubjub::SubgroupPoint>),
+    K256Taproot(gennaro_dkg::SecretParticipant<k256::ProjectivePoint>),
 }
+
+/// The gennaro DKG frost refresh participant
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum FrostDkgRefreshParticipant {
+    Ed25519Sha512(gennaro_dkg::RefreshParticipant<vsss_rs::curve25519::WrappedEdwards>),
+    Ed448Shake256(gennaro_dkg::RefreshParticipant<ed448_goldilocks::EdwardsPoint>),
+    Ristretto25519Sha512(gennaro_dkg::RefreshParticipant<vsss_rs::curve25519::WrappedRistretto>),
+    K256Sha256(gennaro_dkg::RefreshParticipant<k256::ProjectivePoint>),
+    P256Sha256(gennaro_dkg::RefreshParticipant<p256::ProjectivePoint>),
+    P384Sha384(gennaro_dkg::RefreshParticipant<p384::ProjectivePoint>),
+    RedJubjubBlake2b512(gennaro_dkg::RefreshParticipant<jubjub::SubgroupPoint>),
+    K256Taproot(gennaro_dkg::RefreshParticipant<k256::ProjectivePoint>),
+}
+//
+// /// The round 1 gennaro DKG broadcast data for FROST and the associated ciphersuites
+// #[derive(Clone, Debug, Serialize, Deserialize)]
+// pub enum FrostDkgRound1BroadcastData {
+//     Ed25519Sha512(gennaro_dkg::Round1BroadcastData<vsss_rs::curve25519::WrappedEdwards>),
+//     Ed448Shake256(gennaro_dkg::Round1BroadcastData<ed448_goldilocks::EdwardsPoint>),
+//     Ristretto25519Sha512(gennaro_dkg::Round1BroadcastData<vsss_rs::curve25519::WrappedRistretto>),
+//     K256Sha256(gennaro_dkg::Round1BroadcastData<k256::ProjectivePoint>),
+//     P256Sha256(gennaro_dkg::Round1BroadcastData<p256::ProjectivePoint>),
+//     P384Sha384(gennaro_dkg::Round1BroadcastData<p384::ProjectivePoint>),
+//     RedJubjubBlake2b512(gennaro_dkg::Round1BroadcastData<jubjub::SubgroupPoint>),
+//     K256Taproot(gennaro_dkg::Round1BroadcastData<k256::ProjectivePoint>),
+// }
+//
+// /// The round 3 gennaro DKG broadcast data for FROST and the associated ciphersuites
+// #[derive(Clone, Debug, Serialize, Deserialize)]
+// pub enum FrostDkgRound3BroadcastData {
+//     Ed25519Sha512(gennaro_dkg::Round3BroadcastData<vsss_rs::curve25519::WrappedEdwards>),
+//     Ed448Shake256(gennaro_dkg::Round3BroadcastData<ed448_goldilocks::EdwardsPoint>),
+//     Ristretto25519Sha512(gennaro_dkg::Round3BroadcastData<vsss_rs::curve25519::WrappedRistretto>),
+//     K256Sha256(gennaro_dkg::Round3BroadcastData<k256::ProjectivePoint>),
+//     P256Sha256(gennaro_dkg::Round3BroadcastData<p256::ProjectivePoint>),
+//     P384Sha384(gennaro_dkg::Round3BroadcastData<p384::ProjectivePoint>),
+//     RedJubjubBlake2b512(gennaro_dkg::Round3BroadcastData<jubjub::SubgroupPoint>),
+//     K256Taproot(gennaro_dkg::Round3BroadcastData<k256::ProjectivePoint>),
+// }
+//
+// /// The round 4 gennaro DKG broadcast data for FROST and the associated ciphersuites
+// #[derive(Clone, Debug, Serialize, Deserialize)]
+// pub enum FrostDkgRound4BroadcastData {
+//     Ed25519Sha512(gennaro_dkg::Round4EchoBroadcastData<vsss_rs::curve25519::WrappedEdwards>),
+//     Ed448Shake256(gennaro_dkg::Round4EchoBroadcastData<ed448_goldilocks::EdwardsPoint>),
+//     Ristretto25519Sha512(gennaro_dkg::Round4EchoBroadcastData<vsss_rs::curve25519::WrappedRistretto>),
+//     K256Sha256(gennaro_dkg::Round4EchoBroadcastData<k256::ProjectivePoint>),
+//     P256Sha256(gennaro_dkg::Round4EchoBroadcastData<p256::ProjectivePoint>),
+//     P384Sha384(gennaro_dkg::Round4EchoBroadcastData<p384::ProjectivePoint>),
+//     RedJubjubBlake2b512(gennaro_dkg::Round4EchoBroadcastData<jubjub::SubgroupPoint>),
+//     K256Taproot(gennaro_dkg::Round4EchoBroadcastData<k256::ProjectivePoint>),
+// }
 
 fn verify<C: Ciphersuite>(
     message: &[u8],
@@ -709,10 +897,16 @@ fn aggregate<C: Ciphersuite>(
     if !signing_package.is_valid() {
         return Err(Error::General("Error aggregating signature".to_string()));
     }
+
     let res = frost_core::aggregate::<C>(&signing_package, &signature_shares_map, &pubkey_package);
     let signature = match res {
         Ok(s) => s,
-        Err(_) => return Err(Error::General("Error aggregating signature".to_string())),
+        Err(e) => {
+            return Err(Error::General(format!(
+                "Error aggregating signature: {}",
+                e
+            )))
+        }
     };
     Ok(signature.into())
 }
@@ -869,7 +1063,7 @@ mod tests {
     #[case::p256(Scheme::P256Sha256)]
     #[case::p384(Scheme::P384Sha384)]
     #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
-    #[case::redjubjub(Scheme::K256Taproot)]
+    #[case::taproot(Scheme::K256Taproot)]
     fn rounds(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u8 = 3;
@@ -882,7 +1076,7 @@ mod tests {
         let mut signing_commitments = Vec::new();
 
         for (id, secret_share) in secret_shares {
-            let res = scheme.round1(&secret_share, &mut rng);
+            let res = scheme.signing_round1(&secret_share, &mut rng);
             assert!(res.is_ok());
             let (nonces, commitments) = res.unwrap();
             signing_package.insert(id, (nonces, secret_share));
@@ -892,7 +1086,7 @@ mod tests {
         let mut verifying_shares = Vec::new();
         let mut signature_shares = Vec::new();
         for (id, (nonces, secret_share)) in signing_package {
-            let res = scheme.sign(
+            let res = scheme.signing_round2(
                 MSG,
                 &signing_commitments,
                 &nonces,
@@ -927,7 +1121,7 @@ mod tests {
     #[case::p256(Scheme::P256Sha256)]
     #[case::p384(Scheme::P384Sha384)]
     #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
-    #[case::redjubjub(Scheme::K256Taproot)]
+    #[case::taproot(Scheme::K256Taproot)]
     fn full(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u8 = 3;
@@ -966,7 +1160,7 @@ mod tests {
             let mut verifying_shares = Vec::new();
             let mut signature_shares = Vec::new();
             for (id, nonces, secret_share) in new_signing_package {
-                let res = scheme.sign(
+                let res = scheme.signing_round2(
                     MSG,
                     &signing_commitments,
                     &nonces,

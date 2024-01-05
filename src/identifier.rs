@@ -1,3 +1,5 @@
+mod compatibility;
+
 use crate::{Error, Scheme};
 use frost_core::Ciphersuite;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -125,7 +127,7 @@ impl<'de> Deserialize<'de> for Identifier {
     }
 }
 
-from_impl!(Identifier);
+from_bytes_impl!(Identifier);
 
 impl Identifier {
     pub fn is_zero(&self) -> subtle::Choice {

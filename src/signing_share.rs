@@ -47,7 +47,7 @@ impl<C: Ciphersuite> TryFrom<&SigningShare> for frost_core::keys::SigningShare<C
     }
 }
 
-from_impl!(SigningShare);
+from_bytes_impl!(SigningShare);
 serde_impl!(SigningShare, scalar_len, 58);
 display_impl!(SigningShare);
 
@@ -120,11 +120,13 @@ mod tests {
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
             let share = k256::Scalar::random(&mut rng);
-            let share: SigningShare = share.into();
+            let share: SigningShare = (Scheme::K256Sha256, share).try_into().unwrap();
             let frost_share = k256::Scalar::try_from(&share);
             assert!(frost_share.is_ok());
             let frost_share = frost_share.unwrap();
-            assert_eq!(share, SigningShare::from(&frost_share));
+            let res = SigningShare::try_from((Scheme::K256Sha256, &frost_share));
+            assert!(res.is_ok());
+            assert_eq!(share, res.unwrap());
         }
     }
 
@@ -136,11 +138,13 @@ mod tests {
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
             let share = p256::Scalar::random(&mut rng);
-            let share: SigningShare = share.into();
+            let share: SigningShare = (Scheme::P256Sha256, share).try_into().unwrap();
             let frost_share = p256::Scalar::try_from(&share);
             assert!(frost_share.is_ok());
             let frost_share = frost_share.unwrap();
-            assert_eq!(share, SigningShare::from(&frost_share));
+            let res = SigningShare::try_from((Scheme::P256Sha256, &frost_share));
+            assert!(res.is_ok());
+            assert_eq!(share, res.unwrap());
         }
     }
 
@@ -152,11 +156,13 @@ mod tests {
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
             let share = p384::Scalar::random(&mut rng);
-            let share: SigningShare = share.into();
+            let share: SigningShare = (Scheme::P384Sha384, share).try_into().unwrap();
             let frost_share = p384::Scalar::try_from(&share);
             assert!(frost_share.is_ok());
             let frost_share = frost_share.unwrap();
-            assert_eq!(share, SigningShare::from(&frost_share));
+            let res = SigningShare::try_from((Scheme::P384Sha384, &frost_share));
+            assert!(res.is_ok());
+            assert_eq!(share, res.unwrap());
         }
     }
 
@@ -166,11 +172,13 @@ mod tests {
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
             let share = curve25519_dalek::Scalar::random(&mut rng);
-            let share: SigningShare = share.into();
+            let share: SigningShare = (Scheme::Ed25519Sha512, share).try_into().unwrap();
             let frost_share = curve25519_dalek::Scalar::try_from(&share);
             assert!(frost_share.is_ok());
             let frost_share = frost_share.unwrap();
-            assert_eq!(share, SigningShare::from(&frost_share));
+            let res = SigningShare::try_from((Scheme::Ed25519Sha512, &frost_share));
+            assert!(res.is_ok());
+            assert_eq!(share, res.unwrap());
         }
     }
 
@@ -180,11 +188,12 @@ mod tests {
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
             let share = ed448_goldilocks::Scalar::random(&mut rng);
-            let share: SigningShare = share.into();
+            let share: SigningShare = (Scheme::Ed448Shake256, share).try_into().unwrap();
             let frost_share = ed448_goldilocks::Scalar::try_from(&share);
             assert!(frost_share.is_ok());
             let frost_share = frost_share.unwrap();
-            assert_eq!(share, SigningShare::from(&frost_share));
+            let res = SigningShare::try_from((Scheme::Ed448Shake256, &frost_share));
+            assert_eq!(share, res.unwrap());
         }
     }
 
@@ -196,11 +205,13 @@ mod tests {
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
             let share = jubjub::Scalar::random(&mut rng);
-            let share: SigningShare = share.into();
+            let share: SigningShare = (Scheme::RedJubjubBlake2b512, share).try_into().unwrap();
             let frost_share = jubjub::Scalar::try_from(&share);
             assert!(frost_share.is_ok());
             let frost_share = frost_share.unwrap();
-            assert_eq!(share, SigningShare::from(&frost_share));
+            let res = SigningShare::try_from((Scheme::RedJubjubBlake2b512, &frost_share));
+            assert!(res.is_ok());
+            assert_eq!(share, res.unwrap());
         }
     }
 
@@ -210,11 +221,13 @@ mod tests {
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
             let share = curve25519_dalek::Scalar::random(&mut rng);
-            let share: SigningShare = vsss_rs::curve25519::WrappedScalar(share).into();
+            let share: SigningShare = (Scheme::Ed25519Sha512, vsss_rs::curve25519::WrappedScalar(share)).try_into().unwrap();
             let frost_share = vsss_rs::curve25519::WrappedScalar::try_from(&share);
             assert!(frost_share.is_ok());
             let frost_share = frost_share.unwrap();
-            assert_eq!(share, SigningShare::from(&frost_share));
+            let res = SigningShare::try_from((Scheme::Ed25519Sha512, &frost_share));
+            assert!(res.is_ok());
+            assert_eq!(share, res.unwrap());
         }
     }
 

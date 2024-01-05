@@ -25,7 +25,11 @@ impl TryFrom<&Signature> for ed25519_dalek::Signature {
                 "Ciphersuite does not match signature".to_string(),
             ));
         }
-        let bytes: ed25519_dalek::ed25519::SignatureBytes = value.value.clone().try_into().map_err(|_| Error::General("Error converting signature from bytes".to_string()))?;
+        let bytes: ed25519_dalek::ed25519::SignatureBytes = value
+            .value
+            .clone()
+            .try_into()
+            .map_err(|_| Error::General("Error converting signature from bytes".to_string()))?;
         Ok(ed25519_dalek::Signature::from_bytes(&bytes))
     }
 }
@@ -60,7 +64,6 @@ impl<S: reddsa::SigType> TryFrom<Signature> for reddsa::Signature<S> {
     fn try_from(value: Signature) -> Result<Self, Self::Error> {
         Self::try_from(&value)
     }
-
 }
 
 impl<S: reddsa::SigType> TryFrom<&Signature> for reddsa::Signature<S> {
@@ -73,7 +76,11 @@ impl<S: reddsa::SigType> TryFrom<&Signature> for reddsa::Signature<S> {
                 "Ciphersuite does not match signature".to_string(),
             ));
         }
-        let bytes: [u8; 64] = value.value.as_slice().try_into().map_err(|_| Error::General("Error converting signature from bytes".to_string()))?;
+        let bytes: [u8; 64] = value
+            .value
+            .as_slice()
+            .try_into()
+            .map_err(|_| Error::General("Error converting signature from bytes".to_string()))?;
         Ok(Self::from(bytes))
     }
 }
@@ -112,12 +119,10 @@ impl TryFrom<&Signature> for k256::schnorr::Signature {
             ));
         }
         match value.value.len() {
-            64 => {
-                k256::schnorr::Signature::try_from(value.value.as_slice()).map_err(|_| Error::General("Error converting signature from bytes".to_string()))
-            },
-            65 => {
-                k256::schnorr::Signature::try_from(&value.value[1..]).map_err(|_| Error::General("Error converting signature from bytes".to_string()))
-            },
+            64 => k256::schnorr::Signature::try_from(value.value.as_slice())
+                .map_err(|_| Error::General("Error converting signature from bytes".to_string())),
+            65 => k256::schnorr::Signature::try_from(&value.value[1..])
+                .map_err(|_| Error::General("Error converting signature from bytes".to_string())),
             _ => Err(Error::General("Invalid signature length".to_string())),
         }
     }
@@ -125,17 +130,10 @@ impl TryFrom<&Signature> for k256::schnorr::Signature {
 
 #[cfg(test)]
 mod tests {
-    use ed448_goldilocks::elliptic_curve::bigint::U256;
-    use ed448_goldilocks::elliptic_curve::ops::Reduce;
-    use ff::PrimeField;
-    use group::prime::PrimeCurveAffine;
-    use k256::{FieldBytes, ProjectivePoint, Scalar};
-    use k256::elliptic_curve::scalar::IsHigh;
     use crate::*;
     use rand::Rng;
-    use subtle::ConstantTimeEq;
     use sha2::{Digest, Sha256};
-    use vsss_rs::Share;
+    use signature_crypto::hazmat::PrehashVerifier;
 
     #[test]
     fn ed25519_signature_conversion_simple() {
@@ -159,13 +157,14 @@ mod tests {
 
         let mut rng = rand::thread_rng();
 
-        let (secret_shares, verifying_key) = SCHEME.generate_with_trusted_dealer(2, 3, &mut rng).unwrap();
+        let (secret_shares, verifying_key) =
+            SCHEME.generate_with_trusted_dealer(2, 3, &mut rng).unwrap();
 
         let mut signing_package = BTreeMap::new();
         let mut signing_commitments = Vec::new();
 
         for (id, secret_share) in secret_shares {
-            let res = SCHEME.round1(&secret_share, &mut rng);
+            let res = SCHEME.signing_round1(&secret_share, &mut rng);
             assert!(res.is_ok());
             let (nonces, commitments) = res.unwrap();
             signing_package.insert(id, (nonces, secret_share));
@@ -175,7 +174,7 @@ mod tests {
         let mut verifying_shares = Vec::new();
         let mut signature_shares = Vec::new();
         for (id, (nonces, secret_share)) in signing_package {
-            let res = SCHEME.sign(
+            let res = SCHEME.signing_round2(
                 MSG,
                 &signing_commitments,
                 &nonces,
@@ -203,7 +202,10 @@ mod tests {
 
         // Convert to concrete types and see if verify works
         let signature = ed25519_dalek::Signature::try_from(signature).unwrap();
-        let verifying_key = ed25519_dalek::VerifyingKey::from_bytes(verifying_key.value.as_slice().try_into().unwrap()).unwrap();
+        let verifying_key = ed25519_dalek::VerifyingKey::from_bytes(
+            verifying_key.value.as_slice().try_into().unwrap(),
+        )
+        .unwrap();
         assert!(verifying_key.verify(MSG, &signature).is_ok());
     }
 
@@ -231,13 +233,14 @@ mod tests {
 
         let mut rng = rand_core::OsRng;
 
-        let (secret_shares, verifying_key) = SCHEME.generate_with_trusted_dealer(2, 3, &mut rng).unwrap();
+        let (secret_shares, verifying_key) =
+            SCHEME.generate_with_trusted_dealer(2, 3, &mut rng).unwrap();
 
         let mut signing_package = BTreeMap::new();
         let mut signing_commitments = Vec::new();
 
         for (id, secret_share) in secret_shares {
-            let res = SCHEME.round1(&secret_share, &mut rng);
+            let res = SCHEME.signing_round1(&secret_share, &mut rng);
             assert!(res.is_ok());
             let (nonces, commitments) = res.unwrap();
             signing_package.insert(id, (nonces, secret_share));
@@ -247,7 +250,7 @@ mod tests {
         let mut verifying_shares = Vec::new();
         let mut signature_shares = Vec::new();
         for (id, (nonces, secret_share)) in signing_package {
-            let res = SCHEME.sign(
+            let res = SCHEME.signing_round2(
                 MSG,
                 &signing_commitments,
                 &nonces,
@@ -274,7 +277,8 @@ mod tests {
         assert!(SCHEME.verify(MSG, &verifying_key, &signature).is_ok());
 
         // Convert to concrete types and see if verify works
-        let signature = reddsa::Signature::<reddsa::sapling::SpendAuth>::try_from(signature).unwrap();
+        let signature =
+            reddsa::Signature::<reddsa::sapling::SpendAuth>::try_from(signature).unwrap();
         let verifying_key = reddsa::VerificationKey::try_from(verifying_key).unwrap();
         assert!(verifying_key.verify(MSG, &signature).is_ok());
     }
@@ -294,44 +298,24 @@ mod tests {
 
     #[test]
     fn taproot_signature_frost_verify() {
-        use k256::elliptic_curve::point::AffineCoordinates;
-
         const SCHEME: Scheme = Scheme::K256Taproot;
         const MSG: &[u8] = b"secp256k1_taproot_signature_frost_verify";
 
-        let msg  = Sha256::default().chain_update(MSG).finalize();
+        let msg = Sha256::default().chain_update(MSG).finalize();
 
         let mut rng = rand_core::OsRng;
 
-        let (mut secret_shares, mut verifying_key) = SCHEME.generate_with_trusted_dealer(2, 3, &mut rng).unwrap();
+        let (secret_shares, verifying_key) =
+            SCHEME.generate_with_trusted_dealer(2, 3, &mut rng).unwrap();
 
-        // if verifying_key.value[0] == 0x2 {
-        //     let mut shares = secret_shares.iter().map(|(i, s)| {
-        //         <Vec<u8> as vsss_rs::Share>::with_identifier_and_value(i.id, s.value.as_slice())
-        //     }).collect::<Vec<Vec<u8>>>();
-        //     let mut secret = vsss_rs::combine_shares::<Scalar, u8, Vec<u8>>(shares.as_slice()).unwrap();
-        //     secret = -secret;
-        //     let pk = ProjectivePoint::GENERATOR * secret;
-        //     verifying_key = (SCHEME, pk).into();
-        //     shares = vsss_rs::shamir::split_secret(2, 3, secret, &mut rng).unwrap();
-        //     secret_shares = shares.iter().map(|s| {
-        //         let i: Identifier = (SCHEME, s[0]).into();
-        //         let ss = s.as_field_element::<Scalar>().unwrap();
-        //         let sss: SigningShare = (SCHEME, ss).into();
-        //         (i, sss)
-        //     }).collect();
-        // }
-
-        println!("verifying key {}", hex::encode(verifying_key.value.as_slice()));
         let vk = k256::schnorr::VerifyingKey::try_from(&verifying_key).unwrap();
 
-        let mut counts = [0; 4];
         for _ in 0..30 {
             let mut signing_package = BTreeMap::new();
             let mut signing_commitments = Vec::new();
 
             for (id, secret_share) in &secret_shares {
-                let res = SCHEME.round1(&secret_share, &mut rng);
+                let res = SCHEME.signing_round1(&secret_share, &mut rng);
                 assert!(res.is_ok());
                 let (nonces, commitments) = res.unwrap();
                 signing_package.insert(id.clone(), (nonces, secret_share));
@@ -341,8 +325,8 @@ mod tests {
             let mut verifying_shares = Vec::new();
             let mut signature_shares = Vec::new();
             for (id, (nonces, secret_share)) in signing_package {
-                let res = SCHEME.sign(
-                    &msg[..],
+                let res = SCHEME.signing_round2(
+                    MSG,
                     &signing_commitments[..],
                     &nonces,
                     &KeyPackage {
@@ -358,58 +342,18 @@ mod tests {
             }
 
             let res = SCHEME.aggregate(
-                &msg[..],
+                MSG,
                 &signing_commitments,
                 &signature_shares,
                 &verifying_shares,
                 &verifying_key,
             );
             let signature = res.unwrap();
-            assert!(SCHEME.verify(&msg[..], &verifying_key, &signature).is_ok());
+            assert!(SCHEME.verify(MSG, &verifying_key, &signature).is_ok());
 
             // Convert to concrete types and see if verify works
-            // let sig = k256::schnorr::Signature::try_from(&signature).unwrap();
-
-            let prehash: [u8; 32] = (&msg[..]).try_into().unwrap();
-
-            let e = <Scalar as Reduce<U256>>::reduce_bytes(
-                &tagged_hash(CHALLENGE_TAG)
-                    .chain_update(&signature.value[1..33])
-                    .chain_update(vk.to_bytes())
-                    .chain_update(prehash)
-                    .finalize(),
-            );
-            let r = k256::FieldElement::from_bytes(FieldBytes::from_slice(&signature.value[1..33])).unwrap();
-            let s = Scalar::from_repr(FieldBytes::clone_from_slice(&signature.value[33..])).unwrap();
-
-            let mut R = (ProjectivePoint::GENERATOR * s + ProjectivePoint::from(vk.as_affine()) * -e).to_affine();
-            counts[0] += (!R.is_identity() & R.y_is_odd() & R.x().ct_eq(&signature.value[1..33])).unwrap_u8() as usize;
-
-            R = (ProjectivePoint::GENERATOR * -s + ProjectivePoint::from(vk.as_affine()) * -e).to_affine();
-
-            counts[1] += (!R.is_identity() & R.y_is_odd() & R.x().ct_eq(&signature.value[1..33])).unwrap_u8() as usize;
-
-            R = (ProjectivePoint::GENERATOR * -s - ProjectivePoint::from(vk.as_affine()) * -e).to_affine();
-
-            counts[2] += (!R.is_identity() & R.y_is_odd() & R.x().ct_eq(&signature.value[1..33])).unwrap_u8() as usize;
-
-            R = (ProjectivePoint::GENERATOR * s - ProjectivePoint::from(vk.as_affine()) * -e).to_affine();
-
-            counts[3] += (!R.is_identity() & R.y_is_odd() & R.x().ct_eq(&signature.value[1..33])).unwrap_u8() as usize;
+            let sig = k256::schnorr::Signature::try_from(&signature).unwrap();
+            assert!(vk.verify_prehash(&msg[..], &sig).is_ok());
         }
-        println!("Counts");
-        println!("original {}", counts[0]);
-        println!("neg s    {}", counts[1]);
-        println!("neg s_vk {}", counts[2]);
-        println!("neg vk   {}", counts[3]);
-    }
-
-    const CHALLENGE_TAG: &[u8] = b"BIP0340/challenge";
-    fn tagged_hash(tag: &[u8]) -> Sha256 {
-        let tag_hash = Sha256::digest(tag);
-        let mut digest = Sha256::new();
-        digest.update(tag_hash);
-        digest.update(tag_hash);
-        digest
     }
 }

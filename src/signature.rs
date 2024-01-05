@@ -47,7 +47,7 @@ impl<C: Ciphersuite> TryFrom<&Signature> for frost_core::Signature<C> {
     }
 }
 
-from_impl!(Signature);
+from_bytes_impl!(Signature);
 serde_impl!(Signature, signature_len, 115);
 display_impl!(Signature);
 
