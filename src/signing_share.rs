@@ -96,6 +96,11 @@ mod tests {
         frost_redjubjub::JubjubScalarField,
         Scheme::RedJubjubBlake2b512
     )]
+    #[case::taproot(
+        frost_taproot::Secp256K1Taproot,
+        frost_secp256k1::Secp256K1ScalarField,
+        Scheme::K256Taproot
+    )]
     fn convert_1<C: Ciphersuite, F: Field>(#[case] _c: C, #[case] _f: F, #[case] scheme: Scheme) {
         const ITER: usize = 25;
         let mut rng = rand::rngs::OsRng;
@@ -221,7 +226,12 @@ mod tests {
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
             let share = curve25519_dalek::Scalar::random(&mut rng);
-            let share: SigningShare = (Scheme::Ed25519Sha512, vsss_rs::curve25519::WrappedScalar(share)).try_into().unwrap();
+            let share: SigningShare = (
+                Scheme::Ed25519Sha512,
+                vsss_rs::curve25519::WrappedScalar(share),
+            )
+                .try_into()
+                .unwrap();
             let frost_share = vsss_rs::curve25519::WrappedScalar::try_from(&share);
             assert!(frost_share.is_ok());
             let frost_share = frost_share.unwrap();
@@ -239,6 +249,7 @@ mod tests {
     #[case::p256(frost_p256::P256ScalarField, Scheme::P256Sha256)]
     #[case::p384(frost_p384::P384ScalarField, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubScalarField, Scheme::RedJubjubBlake2b512)]
+    #[case::taproot(frost_taproot::Secp256K1TaprootScalarField, Scheme::K256Taproot)]
     fn serialize<F: Field>(#[case] _f: F, #[case] scheme: Scheme) {
         const ITER: usize = 25;
         let mut rng = rand::rngs::OsRng;

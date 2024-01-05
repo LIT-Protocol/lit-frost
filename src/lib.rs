@@ -694,7 +694,7 @@ impl Scheme {
             Self::P256Sha256 => Ok(65),
             Self::P384Sha384 => Ok(97),
             Self::RedJubjubBlake2b512 => Ok(64),
-            Self::K256Taproot => Ok(64),
+            Self::K256Taproot => Ok(65),
             Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
         }
     }

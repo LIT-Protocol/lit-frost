@@ -69,6 +69,7 @@ mod tests {
     #[case::p256(frost_p256::P256Sha256, Scheme::P256Sha256)]
     #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
+    #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
     fn convert<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {
         const ITER: usize = 25;
         let mut rng = rand::rngs::OsRng;
@@ -96,6 +97,7 @@ mod tests {
     #[case::p256(frost_p256::P256Sha256, Scheme::P256Sha256)]
     #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
+    #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
     fn serialize<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {
         const ITER: usize = 25;
         let mut rng = rand::rngs::OsRng;

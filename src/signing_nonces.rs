@@ -228,6 +228,11 @@ mod tests {
         frost_redjubjub::JubjubScalarField,
         Scheme::RedJubjubBlake2b512
     )]
+    #[case::taproot(
+        frost_taproot::Secp256K1Taproot,
+        frost_taproot::Secp256K1TaprootScalarField,
+        Scheme::K256Taproot
+    )]
     fn convert<C: Ciphersuite, F: Field>(#[case] _c: C, #[case] _f: F, #[case] scheme: Scheme) {
         const ITER: usize = 25;
         let mut rng = rand::rngs::OsRng;
@@ -285,6 +290,11 @@ mod tests {
         frost_redjubjub::JubjubBlake2b512,
         frost_redjubjub::JubjubScalarField,
         Scheme::RedJubjubBlake2b512
+    )]
+    #[case::taproot(
+        frost_taproot::Secp256K1Taproot,
+        frost_taproot::Secp256K1TaprootScalarField,
+        Scheme::K256Taproot
     )]
     fn serialize<C: Ciphersuite, F: Field>(#[case] _c: C, #[case] _f: F, #[case] scheme: Scheme) {
         const ITER: usize = 25;
