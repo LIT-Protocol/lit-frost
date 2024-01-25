@@ -184,17 +184,7 @@ pub enum Scheme {
 
 impl Display for Scheme {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Ed25519Sha512 => write!(f, "Ed25519Sha512"),
-            Self::Ed448Shake256 => write!(f, "Ed448Shake256"),
-            Self::Ristretto25519Sha512 => write!(f, "Ristretto25519Sha512"),
-            Self::K256Sha256 => write!(f, "K256Sha256"),
-            Self::P256Sha256 => write!(f, "P256Sha256"),
-            Self::P384Sha384 => write!(f, "P384Sha384"),
-            Self::RedJubjubBlake2b512 => write!(f, "RedJubjubBlake2b512"),
-            Self::K256Taproot => write!(f, "K256Taproot"),
-            Self::Unknown => write!(f, "Unknown"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -770,6 +760,21 @@ impl Scheme {
                 )
             }
             Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
+        }
+    }
+
+    /// Return the user-friendly name of the ciphersuite
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Ed25519Sha512 => "Ed25519Sha512",
+            Self::Ed448Shake256 => "Ed448Shake256",
+            Self::Ristretto25519Sha512 => "Ristretto25519Sha512",
+            Self::K256Sha256 => "K256Sha256",
+            Self::P256Sha256 => "P256Sha256",
+            Self::P384Sha384 => "P384Sha384",
+            Self::RedJubjubBlake2b512 => "RedJubjubBlake2b512",
+            Self::K256Taproot => "K256Taproot",
+            Self::Unknown => "Unknown",
         }
     }
 }
