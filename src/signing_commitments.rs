@@ -21,10 +21,10 @@ impl<C: Ciphersuite> From<frost_core::round1::SigningCommitments<C>> for Signing
 
 impl<C: Ciphersuite> From<&frost_core::round1::SigningCommitments<C>> for SigningCommitments {
     fn from(s: &frost_core::round1::SigningCommitments<C>) -> Self {
-        let scheme = C::ID.parse().unwrap();
+        let scheme = C::ID.parse().expect("Unknown ciphersuite");
         Self {
             scheme,
-            value: s.serialize().unwrap(),
+            value: s.serialize().expect("Error serializing signing commitment"),
         }
     }
 }
@@ -33,7 +33,7 @@ impl<C: Ciphersuite> TryFrom<&SigningCommitments> for frost_core::round1::Signin
     type Error = Error;
 
     fn try_from(value: &SigningCommitments) -> Result<Self, Self::Error> {
-        if value.scheme != C::ID.parse().unwrap() {
+        if value.scheme != C::ID.parse().expect("Unknown ciphersuite") {
             return Err(Error::General(
                 "Signing commitment scheme does not match ciphersuite".to_string(),
             ));

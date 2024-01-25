@@ -19,7 +19,7 @@ impl<C: Ciphersuite> From<frost_core::keys::VerifyingShare<C>> for VerifyingShar
 impl<C: Ciphersuite> From<&frost_core::keys::VerifyingShare<C>> for VerifyingShare {
     fn from(s: &frost_core::keys::VerifyingShare<C>) -> Self {
         let value = s.serialize().as_ref().to_vec();
-        let scheme = C::ID.parse::<Scheme>().unwrap();
+        let scheme = C::ID.parse::<Scheme>().expect("Unknown ciphersuite");
         Self { scheme, value }
     }
 }

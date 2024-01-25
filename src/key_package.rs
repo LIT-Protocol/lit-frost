@@ -31,7 +31,7 @@ impl<C: Ciphersuite> From<&frost_core::keys::KeyPackage<C>> for KeyPackage {
             identifier: s.identifier().into(),
             secret_share: s.signing_share().into(),
             verifying_key: s.verifying_key().into(),
-            threshold: NonZeroU8::new(*s.min_signers() as u8).unwrap(),
+            threshold: NonZeroU8::new(*s.min_signers() as u8).expect("Threshold is zero"),
         }
     }
 }

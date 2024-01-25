@@ -6,8 +6,10 @@ pub enum Error {
     /// Verifiable secret sharing scheme errors
     #[error("Vsss error: {0}")]
     Vsss(vsss_rs::Error),
+    /// Gennaro DKG errors
     #[error("Gennaro error: {0}")]
     Gennaro(#[from] gennaro_dkg::Error),
+    /// General errors
     #[error("Error: {0}")]
     General(String),
 }

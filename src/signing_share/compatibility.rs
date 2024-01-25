@@ -97,7 +97,7 @@ try_from_scheme_ref!(
                 "Signing share scheme does not match ciphersuite".to_string(),
             ));
         }
-        let bytes = <[u8; 32]>::try_from(value.value.as_slice()).unwrap();
+        let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
         Option::from(curve25519_dalek::Scalar::from_canonical_bytes(bytes))
             .ok_or(Error::General("Error converting signing share".to_string()))
     }
@@ -165,7 +165,7 @@ try_from_scheme_ref!(jubjub::Scalar, SigningShare, |value: &SigningShare| {
             "Signing share scheme does not match ciphersuite".to_string(),
         ));
     }
-    let bytes = <[u8; 32]>::try_from(value.value.as_slice()).unwrap();
+    let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
     Option::from(jubjub::Scalar::from_bytes(&bytes))
         .ok_or(Error::General("Error converting signing share".to_string()))
 });

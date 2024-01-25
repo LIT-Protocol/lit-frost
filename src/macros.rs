@@ -39,7 +39,7 @@ macro_rules! serde_impl {
 
                         fn expecting(
                             &self,
-                            formatter: &mut std::fmt::Formatter,
+                            formatter: &mut std::fmt::Formatter<'_>,
                         ) -> std::fmt::Result {
                             formatter.write_str("a tuple of (u8, Vec<u8>)")
                         }
@@ -79,7 +79,7 @@ macro_rules! serde_impl {
 macro_rules! display_impl {
     ($name:ident) => {
         impl std::fmt::Display for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "scheme: {}: value: 0x", self.scheme)?;
                 for b in &self.value {
                     write!(f, "{:02x}", b)?;
@@ -127,7 +127,7 @@ macro_rules! from_bytes_impl {
         }
 
         impl TryFrom<Vec<u8>> for $name {
-            type Error = crate::Error;
+            type Error = Error;
 
             fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
                 Self::try_from(value.as_slice())
@@ -135,7 +135,7 @@ macro_rules! from_bytes_impl {
         }
 
         impl TryFrom<&Vec<u8>> for $name {
-            type Error = crate::Error;
+            type Error = Error;
 
             fn try_from(value: &Vec<u8>) -> Result<Self, Self::Error> {
                 Self::try_from(value.as_slice())
@@ -143,7 +143,7 @@ macro_rules! from_bytes_impl {
         }
 
         impl TryFrom<Box<[u8]>> for $name {
-            type Error = crate::Error;
+            type Error = Error;
 
             fn try_from(value: Box<[u8]>) -> Result<Self, Self::Error> {
                 Self::try_from(value.as_ref())
@@ -151,7 +151,7 @@ macro_rules! from_bytes_impl {
         }
 
         impl TryFrom<&[u8]> for $name {
-            type Error = crate::Error;
+            type Error = Error;
 
             fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
                 serde_bare::from_slice(value).map_err(|e| Error::General(e.to_string()))
@@ -163,7 +163,7 @@ macro_rules! from_bytes_impl {
 macro_rules! try_from_scheme_ref {
     ($path:path, $name:ident, $op:expr) => {
         impl TryFrom<$name> for $path {
-            type Error = crate::Error;
+            type Error = Error;
 
             fn try_from(value: $name) -> Result<Self, Self::Error> {
                 Self::try_from(&value)
@@ -171,7 +171,7 @@ macro_rules! try_from_scheme_ref {
         }
 
         impl TryFrom<&$name> for $path {
-            type Error = crate::Error;
+            type Error = Error;
 
             fn try_from(value: &$name) -> Result<Self, Self::Error> {
                 $op(value)
@@ -180,7 +180,7 @@ macro_rules! try_from_scheme_ref {
     };
     ($name:ident, $path:path, $op:expr) => {
         impl TryFrom<(Scheme, $path)> for $name {
-            type Error = crate::Error;
+            type Error = Error;
 
             fn try_from((scheme, value): (Scheme, $path)) -> Result<Self, Self::Error> {
                 Self::try_from((scheme, &value))
@@ -188,7 +188,7 @@ macro_rules! try_from_scheme_ref {
         }
 
         impl TryFrom<(Scheme, &$path)> for $name {
-            type Error = crate::Error;
+            type Error = Error;
 
             fn try_from((scheme, value): (Scheme, &$path)) -> Result<Self, Self::Error> {
                 $op(scheme, value)

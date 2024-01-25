@@ -21,7 +21,7 @@ impl<C: Ciphersuite> From<frost_core::VerifyingKey<C>> for VerifyingKey {
 impl<C: Ciphersuite> From<&frost_core::VerifyingKey<C>> for VerifyingKey {
     fn from(s: &frost_core::VerifyingKey<C>) -> Self {
         let value = s.serialize().as_ref().to_vec();
-        let scheme = C::ID.parse::<Scheme>().unwrap();
+        let scheme = C::ID.parse::<Scheme>().expect("Unknown ciphersuite");
         Self { scheme, value }
     }
 }

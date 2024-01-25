@@ -34,7 +34,7 @@ impl<C: Ciphersuite> From<frost_core::Identifier<C>> for Identifier {
 
 impl<C: Ciphersuite> From<&frost_core::Identifier<C>> for Identifier {
     fn from(s: &frost_core::Identifier<C>) -> Self {
-        match C::ID.parse().unwrap() {
+        match C::ID.parse().expect("Unknown ciphersuite") {
             Scheme::Ed25519Sha512 => Self {
                 scheme: Scheme::Ed25519Sha512,
                 id: s.serialize().as_ref()[0],
@@ -88,7 +88,7 @@ impl<C: Ciphersuite> TryFrom<&Identifier> for frost_core::Identifier<C> {
             .parse::<Scheme>()
             .map_err(|_| Error::General("Unknown ciphersuite".to_string()))?;
         if scheme == s.scheme {
-            Ok(frost_core::Identifier::<C>::try_from(s.id as u16).unwrap())
+            Ok(frost_core::Identifier::<C>::try_from(s.id as u16).expect("Invalid identifier"))
         } else {
             Err(Error::General("Ciphersuite mismatch".to_string()))
         }
@@ -130,6 +130,7 @@ impl<'de> Deserialize<'de> for Identifier {
 from_bytes_impl!(Identifier);
 
 impl Identifier {
+    /// Determine if this identifier is invalid.
     pub fn is_zero(&self) -> subtle::Choice {
         let i = self.id as i8;
         let res = ((i | -i) >> 7) + 1;

@@ -20,7 +20,7 @@ impl<C: Ciphersuite> From<frost_core::Signature<C>> for Signature {
 
 impl<C: Ciphersuite> From<&frost_core::Signature<C>> for Signature {
     fn from(s: &frost_core::Signature<C>) -> Self {
-        let scheme = C::ID.parse().unwrap();
+        let scheme = C::ID.parse().expect("Unknown ciphersuite");
         Self {
             scheme,
             value: s.serialize().as_ref().to_vec(),

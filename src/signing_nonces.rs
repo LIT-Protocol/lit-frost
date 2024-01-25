@@ -29,7 +29,7 @@ impl<C: Ciphersuite> From<frost_core::round1::SigningNonces<C>> for SigningNonce
 
 impl<C: Ciphersuite> From<&frost_core::round1::SigningNonces<C>> for SigningNonces {
     fn from(s: &frost_core::round1::SigningNonces<C>) -> Self {
-        let scheme = C::ID.parse().unwrap();
+        let scheme = C::ID.parse().expect("Unknown ciphersuite");
         Self {
             scheme,
             hiding: s.hiding().serialize().as_ref().to_vec(),
@@ -101,9 +101,9 @@ impl<'de> Deserialize<'de> for SigningNonces {
             let scheme: Scheme = ty
                 .parse()
                 .map_err(|e: Error| serde::de::Error::custom(e.to_string()))?;
-            let hiding = hex::decode(&hiding)
+            let hiding = hex::decode(hiding)
                 .map_err(|e| serde::de::Error::custom(format!("Invalid hex: {}", e)))?;
-            let binding = hex::decode(&binding)
+            let binding = hex::decode(binding)
                 .map_err(|e| serde::de::Error::custom(format!("Invalid hex: {}", e)))?;
             Ok(Self {
                 scheme,
@@ -116,7 +116,7 @@ impl<'de> Deserialize<'de> for SigningNonces {
             impl<'de> Visitor<'de> for SigningNoncesVisitor {
                 type Value = SigningNonces;
 
-                fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
                     formatter.write_str("a tuple of (u8, Vec<u8>)")
                 }
 

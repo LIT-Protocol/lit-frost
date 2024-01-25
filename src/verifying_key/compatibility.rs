@@ -417,7 +417,7 @@ try_from_scheme_ref!(jubjub::AffinePoint, VerifyingKey, |value: &VerifyingKey| {
             "Ciphersuite does not match verifying key".to_string(),
         ));
     }
-    let bytes = <[u8; 32]>::try_from(value.value.as_slice()).unwrap();
+    let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
     Option::<jubjub::AffinePoint>::from(jubjub::AffinePoint::from_bytes(bytes)).ok_or(
         Error::General("Error converting verifying key from bytes".to_string()),
     )
@@ -451,7 +451,7 @@ try_from_scheme_ref!(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
         }
-        let bytes = <[u8; 32]>::try_from(value.value.as_slice()).unwrap();
+        let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
         Option::<jubjub::SubgroupPoint>::from(jubjub::SubgroupPoint::from_bytes(&bytes)).ok_or(
             Error::General("Error converting verifying key from bytes".to_string()),
         )
@@ -531,6 +531,48 @@ impl TryFrom<&VerifyingKey> for k256::schnorr::VerifyingKey {
     }
 }
 
+impl From<ed25519_dalek::VerifyingKey> for VerifyingKey {
+    fn from(s: ed25519_dalek::VerifyingKey) -> Self {
+        Self::from(&s)
+    }
+}
+
+impl From<&ed25519_dalek::VerifyingKey> for VerifyingKey {
+    fn from(s: &ed25519_dalek::VerifyingKey) -> Self {
+        Self {
+            scheme: Scheme::Ed25519Sha512,
+            value: s.to_bytes().to_vec(),
+        }
+    }
+}
+
+impl TryFrom<VerifyingKey> for ed25519_dalek::VerifyingKey {
+    type Error = Error;
+
+    fn try_from(value: VerifyingKey) -> Result<Self, Self::Error> {
+        Self::try_from(&value)
+    }
+}
+
+impl TryFrom<&VerifyingKey> for ed25519_dalek::VerifyingKey {
+    type Error = Error;
+
+    fn try_from(value: &VerifyingKey) -> Result<Self, Self::Error> {
+        let scheme = value.scheme;
+        if scheme != Scheme::Ed25519Sha512 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        let bytes: [u8; 32] =
+            value.value.as_slice().try_into().map_err(|_| {
+                Error::General("Error converting verifying key from bytes".to_string())
+            })?;
+        ed25519_dalek::VerifyingKey::from_bytes(&bytes)
+            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))
+    }
+}
+
 impl<S: reddsa::SigType> TryFrom<(Scheme, &reddsa::VerificationKey<S>)> for VerifyingKey {
     type Error = Error;
 
@@ -574,7 +616,7 @@ impl<S: reddsa::SigType> TryFrom<&VerifyingKey> for reddsa::VerificationKey<S> {
                 "Ciphersuite does not match verifying key".to_string(),
             ));
         }
-        let bytes = <[u8; 32]>::try_from(value.value.as_slice()).unwrap();
+        let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
         Ok(bytes.try_into()?)
     }
 }

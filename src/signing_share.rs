@@ -20,7 +20,7 @@ impl<C: Ciphersuite> From<frost_core::keys::SigningShare<C>> for SigningShare {
 
 impl<C: Ciphersuite> From<&frost_core::keys::SigningShare<C>> for SigningShare {
     fn from(s: &frost_core::keys::SigningShare<C>) -> Self {
-        let scheme = C::ID.parse().unwrap();
+        let scheme = C::ID.parse().expect("Unknown ciphersuite");
         Self {
             scheme,
             value: s.serialize().as_ref().to_vec(),
@@ -32,7 +32,7 @@ impl<C: Ciphersuite> TryFrom<&SigningShare> for frost_core::keys::SigningShare<C
     type Error = Error;
 
     fn try_from(value: &SigningShare) -> Result<Self, Self::Error> {
-        if value.scheme != C::ID.parse().unwrap() {
+        if value.scheme != C::ID.parse().expect("Unknown ciphersuite") {
             return Err(Error::General(
                 "Signing share scheme does not match ciphersuite".to_string(),
             ));

@@ -102,7 +102,24 @@
 //! // Verify the signature
 //! scheme.verify(b"test", &group_key, &signature).unwrap();
 //! ```
-extern crate core;
+#![deny(
+    unsafe_code,
+    missing_docs,
+    missing_debug_implementations,
+    unused_qualifications,
+    unused_import_braces,
+    clippy::unwrap_used
+)]
+#![warn(
+    clippy::cast_precision_loss,
+    clippy::checked_conversions,
+    clippy::implicit_saturating_sub,
+    clippy::mod_module_files,
+    clippy::panic,
+    clippy::panic_in_result_fn,
+    rust_2018_idioms,
+    unused_lifetimes
+)]
 
 #[macro_use]
 mod macros;
@@ -464,6 +481,7 @@ impl Scheme {
         }
     }
 
+    /// Get the [`VerifyingShare`] from a [`SigningShare`]
     pub fn verifying_share(&self, signing_share: &SigningShare) -> FrostResult<VerifyingShare> {
         match self {
             Self::Ed25519Sha512 => verifying_share::<frost_ed25519::Ed25519Sha512>(signing_share),
@@ -482,6 +500,7 @@ impl Scheme {
         }
     }
 
+    /// Create the gennaro dkg parameters for this scheme
     pub fn get_dkg_secret_participant(
         &self,
         id: NonZeroUsize,
@@ -550,6 +569,7 @@ impl Scheme {
         }
     }
 
+    /// Create the gennaro dkg parameters for this scheme
     pub fn get_dkg_refresh_participant(
         &self,
         id: NonZeroUsize,
@@ -699,7 +719,7 @@ impl Scheme {
         }
     }
 
-    #[cfg(test)]
+    /// Perform a key generation with a trusted dealer.
     pub fn generate_with_trusted_dealer<R: CryptoRng + RngCore>(
         &self,
         min_signers: u8,
@@ -770,26 +790,42 @@ impl Scheme {
 /// The gennaro DKG frost secret participant
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum FrostDkgSecretParticipant {
+    /// Parameters for the Ed25519Sha512 ciphersuite
     Ed25519Sha512(gennaro_dkg::SecretParticipant<vsss_rs::curve25519::WrappedEdwards>),
+    /// Parameters for the Ed448Shake256 ciphersuite
     Ed448Shake256(gennaro_dkg::SecretParticipant<ed448_goldilocks::EdwardsPoint>),
+    /// Parameters for the Ristretto25519Sha512 ciphersuite
     Ristretto25519Sha512(gennaro_dkg::SecretParticipant<vsss_rs::curve25519::WrappedRistretto>),
+    /// Parameters for the K256Sha256 ciphersuite
     K256Sha256(gennaro_dkg::SecretParticipant<k256::ProjectivePoint>),
+    /// Parameters for the P256Sha256 ciphersuite
     P256Sha256(gennaro_dkg::SecretParticipant<p256::ProjectivePoint>),
+    /// Parameters for the P384Sha384 ciphersuite
     P384Sha384(gennaro_dkg::SecretParticipant<p384::ProjectivePoint>),
+    /// Parameters for the RedJubjub ciphersuite
     RedJubjubBlake2b512(gennaro_dkg::SecretParticipant<jubjub::SubgroupPoint>),
+    /// Parameters for the K256Taproot ciphersuite
     K256Taproot(gennaro_dkg::SecretParticipant<k256::ProjectivePoint>),
 }
 
 /// The gennaro DKG frost refresh participant
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum FrostDkgRefreshParticipant {
+    /// Parameters for the Ed25519Sha512 ciphersuite
     Ed25519Sha512(gennaro_dkg::RefreshParticipant<vsss_rs::curve25519::WrappedEdwards>),
+    /// Parameters for the Ed448Shake256 ciphersuite
     Ed448Shake256(gennaro_dkg::RefreshParticipant<ed448_goldilocks::EdwardsPoint>),
+    /// Parameters for the Ristretto25519Sha512 ciphersuite
     Ristretto25519Sha512(gennaro_dkg::RefreshParticipant<vsss_rs::curve25519::WrappedRistretto>),
+    /// Parameters for the K256Sha256 ciphersuite
     K256Sha256(gennaro_dkg::RefreshParticipant<k256::ProjectivePoint>),
+    /// Parameters for the P256Sha256 ciphersuite
     P256Sha256(gennaro_dkg::RefreshParticipant<p256::ProjectivePoint>),
+    /// Parameters for the P384Sha384 ciphersuite
     P384Sha384(gennaro_dkg::RefreshParticipant<p384::ProjectivePoint>),
+    /// Parameters for the RedJubjub ciphersuite
     RedJubjubBlake2b512(gennaro_dkg::RefreshParticipant<jubjub::SubgroupPoint>),
+    /// Parameters for the K256Taproot ciphersuite
     K256Taproot(gennaro_dkg::RefreshParticipant<k256::ProjectivePoint>),
 }
 //
@@ -976,7 +1012,7 @@ fn preprocess<C: Ciphersuite, R: CryptoRng + RngCore>(
     ))
 }
 
-#[cfg(test)]
+// #[cfg(test)]
 fn generate_with_trusted_dealer<C: Ciphersuite, R: CryptoRng + RngCore>(
     min_signers: u8,
     max_signers: u8,
