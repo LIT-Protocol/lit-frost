@@ -136,6 +136,34 @@ try_from_scheme_ref!(jubjub::Scalar, Identifier, |id: &Identifier| {
         _ => Err(Error::General("Invalid ciphersuite".to_string())),
     }
 });
+
+try_from_scheme_ref!(
+    Identifier,
+    vsss_rs::curve25519_dalek::Scalar,
+    |scheme, id: &vsss_rs::curve25519_dalek::Scalar| {
+        match scheme {
+            Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 => {
+                let bytes = id.to_bytes();
+                if bytes[1..].iter().any(|b| *b != 0) {
+                    return Err(Error::General("Invalid identifier".to_string()));
+                }
+                Ok(Self {
+                    scheme,
+                    id: bytes[0],
+                })
+            }
+            _ => Err(Error::General("Invalid ciphersuite".to_string())),
+        }
+    }
+);
+try_from_scheme_ref!(vsss_rs::curve25519_dalek::Scalar, Identifier, |id: &Identifier| {
+    match id.scheme {
+        Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 => {
+            Ok(vsss_rs::curve25519_dalek::Scalar::from(id.id as u32))
+        }
+        _ => Err(Error::General("Invalid ciphersuite".to_string())),
+    }
+});
 try_from_scheme_ref!(
     Identifier,
     vsss_rs::curve25519::WrappedScalar,
@@ -145,7 +173,7 @@ try_from_scheme_ref!(
     vsss_rs::curve25519::WrappedScalar,
     Identifier,
     |id: &Identifier| {
-        let scalar = curve25519_dalek::Scalar::try_from(id)?;
-        Ok(Self(scalar))
+        let scalar = vsss_rs::curve25519::WrappedScalar::try_from(id)?;
+        Ok(Self(scalar.0))
     }
 );

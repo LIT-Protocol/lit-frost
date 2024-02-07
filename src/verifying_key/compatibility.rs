@@ -104,6 +104,112 @@ try_from_scheme_ref!(
             .ok_or_else(|| Error::General("Error converting verifying key from bytes".to_string()))
     }
 );
+
+
+try_from_scheme_ref!(
+    VerifyingKey,
+    vsss_rs::curve25519_dalek::edwards::CompressedEdwardsY,
+    |scheme, s: &vsss_rs::curve25519_dalek::edwards::CompressedEdwardsY| {
+        if scheme != Scheme::Ed25519Sha512 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        Ok(Self {
+            scheme,
+            value: s.as_bytes().to_vec(),
+        })
+    }
+);
+try_from_scheme_ref!(
+    vsss_rs::curve25519_dalek::edwards::CompressedEdwardsY,
+    VerifyingKey,
+    |value: &VerifyingKey| {
+        if value.scheme != Scheme::Ed25519Sha512 || value.value.len() != 32 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        vsss_rs::curve25519_dalek::edwards::CompressedEdwardsY::from_slice(&value.value)
+            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))
+    }
+);
+try_from_scheme_ref!(
+    VerifyingKey,
+    vsss_rs::curve25519_dalek::edwards::EdwardsPoint,
+    |scheme, s: &vsss_rs::curve25519_dalek::edwards::EdwardsPoint| {
+        if scheme != Scheme::Ed25519Sha512 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        Ok(Self {
+            scheme,
+            value: s.compress().as_bytes().to_vec(),
+        })
+    }
+);
+try_from_scheme_ref!(
+    vsss_rs::curve25519_dalek::edwards::EdwardsPoint,
+    VerifyingKey,
+    |value: &VerifyingKey| {
+        let pt = vsss_rs::curve25519_dalek::edwards::CompressedEdwardsY::try_from(value)?;
+        pt.decompress()
+            .ok_or_else(|| Error::General("Error converting verifying key from bytes".to_string()))
+    }
+);
+try_from_scheme_ref!(
+    VerifyingKey,
+    vsss_rs::curve25519_dalek::ristretto::CompressedRistretto,
+    |scheme, s: &vsss_rs::curve25519_dalek::ristretto::CompressedRistretto| {
+        if scheme != Scheme::Ristretto25519Sha512 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        Ok(Self {
+            scheme,
+            value: s.as_bytes().to_vec(),
+        })
+    }
+);
+try_from_scheme_ref!(
+    vsss_rs::curve25519_dalek::ristretto::CompressedRistretto,
+    VerifyingKey,
+    |value: &VerifyingKey| {
+        if value.scheme != Scheme::Ristretto25519Sha512 || value.value.len() != 32 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        vsss_rs::curve25519_dalek::ristretto::CompressedRistretto::from_slice(&value.value)
+            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))
+    }
+);
+try_from_scheme_ref!(
+    VerifyingKey,
+    vsss_rs::curve25519_dalek::ristretto::RistrettoPoint,
+    |scheme, s: &vsss_rs::curve25519_dalek::ristretto::RistrettoPoint| {
+        if scheme != Scheme::Ristretto25519Sha512 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        Ok(Self {
+            scheme,
+            value: s.compress().as_bytes().to_vec(),
+        })
+    }
+);
+try_from_scheme_ref!(
+    vsss_rs::curve25519_dalek::ristretto::RistrettoPoint,
+    VerifyingKey,
+    |value: &VerifyingKey| {
+        let pt = vsss_rs::curve25519_dalek::ristretto::CompressedRistretto::try_from(value)?;
+        pt.decompress()
+            .ok_or_else(|| Error::General("Error converting verifying key from bytes".to_string()))
+    }
+);
 try_from_scheme_ref!(
     VerifyingKey,
     k256::ProjectivePoint,
@@ -466,8 +572,8 @@ try_from_scheme_ref!(
     vsss_rs::curve25519::WrappedEdwards,
     VerifyingKey,
     |value: &VerifyingKey| {
-        let pt = curve25519_dalek::edwards::EdwardsPoint::try_from(value)?;
-        Ok(Self(pt))
+        let pt = vsss_rs::curve25519::WrappedEdwards::try_from(value)?;
+        Ok(Self(pt.0))
     }
 );
 try_from_scheme_ref!(
@@ -479,8 +585,8 @@ try_from_scheme_ref!(
     vsss_rs::curve25519::WrappedRistretto,
     VerifyingKey,
     |value: &VerifyingKey| {
-        let pt = curve25519_dalek::ristretto::RistrettoPoint::try_from(value)?;
-        Ok(Self(pt))
+        let pt = vsss_rs::curve25519::WrappedRistretto::try_from(value)?;
+        Ok(Self(pt.0))
     }
 );
 

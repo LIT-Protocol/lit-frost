@@ -131,6 +131,38 @@ try_from_scheme_ref!(
             .ok_or(Error::General("Error converting signing share".to_string()))
     }
 );
+
+try_from_scheme_ref!(
+    SigningShare,
+    vsss_rs::curve25519_dalek::Scalar,
+    |scheme, s: &vsss_rs::curve25519_dalek::Scalar| {
+        if scheme != Scheme::Ed25519Sha512 && scheme != Scheme::Ristretto25519Sha512 {
+            return Err(Error::General(
+                "Signing share scheme does not match ciphersuite".to_string(),
+            ));
+        }
+        Ok(Self {
+            scheme,
+            value: s.to_bytes().to_vec(),
+        })
+    }
+);
+try_from_scheme_ref!(
+    vsss_rs::curve25519_dalek::Scalar,
+    SigningShare,
+    |value: &SigningShare| {
+        if (value.scheme != Scheme::Ed25519Sha512 && value.scheme != Scheme::Ristretto25519Sha512)
+            || value.value.len() != 32
+        {
+            return Err(Error::General(
+                "Signing share scheme does not match ciphersuite".to_string(),
+            ));
+        }
+        let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
+        Option::from(vsss_rs::curve25519_dalek::Scalar::from_canonical_bytes(bytes))
+            .ok_or(Error::General("Error converting signing share".to_string()))
+    }
+);
 try_from_scheme_ref!(
     SigningShare,
     vsss_rs::curve25519::WrappedScalar,
@@ -140,7 +172,7 @@ try_from_scheme_ref!(
     vsss_rs::curve25519::WrappedScalar,
     SigningShare,
     |value: &SigningShare| {
-        let scalar: curve25519_dalek::Scalar = curve25519_dalek::Scalar::try_from(value)?;
+        let scalar: vsss_rs::curve25519_dalek::Scalar = vsss_rs::curve25519_dalek::Scalar::try_from(value)?;
         Ok(Self(scalar))
     }
 );

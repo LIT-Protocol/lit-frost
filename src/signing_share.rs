@@ -222,13 +222,14 @@ mod tests {
 
     #[test]
     fn convert_vsss_wrapped() {
+        use vsss_rs::elliptic_curve::Field;
         const ITER: usize = 25;
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
-            let share = curve25519_dalek::Scalar::random(&mut rng);
+            let share = vsss_rs::curve25519::WrappedScalar::random(&mut rng);
             let share: SigningShare = (
                 Scheme::Ed25519Sha512,
-                vsss_rs::curve25519::WrappedScalar(share),
+                share,
             )
                 .try_into()
                 .unwrap();
