@@ -5,9 +5,9 @@ use frost_core::{Ciphersuite, Group};
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct VerifyingShare {
     /// The scheme associated with this share.
-    scheme: Scheme,
+    pub scheme: Scheme,
     /// The share value.
-    value: Vec<u8>,
+    pub value: Vec<u8>,
 }
 
 impl<C: Ciphersuite> From<frost_core::keys::VerifyingShare<C>> for VerifyingShare {
