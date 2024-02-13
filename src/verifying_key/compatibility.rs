@@ -524,7 +524,7 @@ try_from_scheme_ref!(jubjub::AffinePoint, VerifyingKey, |value: &VerifyingKey| {
         ));
     }
     let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
-    Option::<jubjub::AffinePoint>::from(jubjub::AffinePoint::from_bytes(bytes)).ok_or(
+    Option::<jubjub::AffinePoint>::from(jubjub::AffinePoint::from_bytes(&bytes)).ok_or(
         Error::General("Error converting verifying key from bytes".to_string()),
     )
 });
