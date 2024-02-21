@@ -134,6 +134,15 @@ mod signing_share;
 mod verifying_key;
 mod verifying_share;
 
+pub use curve25519_dalek;
+pub use ed25519_dalek;
+pub use ed448_goldilocks;
+pub use jubjub;
+pub use k256;
+pub use p256;
+pub use p384;
+pub use vsss_rs;
+
 pub use error::*;
 pub use identifier::Identifier;
 pub use key_package::KeyPackage;
