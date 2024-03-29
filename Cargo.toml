@@ -18,7 +18,7 @@ frost-rerandomized = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Pro
 frost-ristretto255 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-secp256k1 = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-taproot = { version = "1.0.0-rc.0", git = "https://github.com/LIT-Protocol/frost.git" }
-gennaro-dkg = "0.9.0-rc1"
+gennaro-dkg = "0.8"
 hex = "0.4"
 jubjub = { version = "0.10", git = "https://github.com/LIT-Protocol/jubjub.git" }
 k256 = { version = "0.13", features = ["arithmetic", "schnorr"] }
@@ -31,7 +31,7 @@ serde_bare = "0.5"
 sha2 = "0.10"
 subtle = "2.5"
 thiserror = "1.0"
-vsss-rs = { version = "4.0.0-rc4", features = ["curve25519"] }
+vsss-rs = { version = "3.3", features = ["curve25519"] }
 
 [dev-dependencies]
 group = "0.13"
