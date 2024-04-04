@@ -105,7 +105,6 @@ try_from_scheme_ref!(
     }
 );
 
-
 try_from_scheme_ref!(
     VerifyingKey,
     vsss_rs::curve25519_dalek::edwards::CompressedEdwardsY,

@@ -156,14 +156,18 @@ try_from_scheme_ref!(
         }
     }
 );
-try_from_scheme_ref!(vsss_rs::curve25519_dalek::Scalar, Identifier, |id: &Identifier| {
-    match id.scheme {
-        Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 => {
-            Ok(vsss_rs::curve25519_dalek::Scalar::from(id.id as u32))
+try_from_scheme_ref!(
+    vsss_rs::curve25519_dalek::Scalar,
+    Identifier,
+    |id: &Identifier| {
+        match id.scheme {
+            Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 => {
+                Ok(vsss_rs::curve25519_dalek::Scalar::from(id.id as u32))
+            }
+            _ => Err(Error::General("Invalid ciphersuite".to_string())),
         }
-        _ => Err(Error::General("Invalid ciphersuite".to_string())),
     }
-});
+);
 try_from_scheme_ref!(
     Identifier,
     vsss_rs::curve25519::WrappedScalar,

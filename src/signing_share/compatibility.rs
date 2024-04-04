@@ -159,8 +159,10 @@ try_from_scheme_ref!(
             ));
         }
         let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
-        Option::from(vsss_rs::curve25519_dalek::Scalar::from_canonical_bytes(bytes))
-            .ok_or(Error::General("Error converting signing share".to_string()))
+        Option::from(vsss_rs::curve25519_dalek::Scalar::from_canonical_bytes(
+            bytes,
+        ))
+        .ok_or(Error::General("Error converting signing share".to_string()))
     }
 );
 try_from_scheme_ref!(
@@ -172,7 +174,8 @@ try_from_scheme_ref!(
     vsss_rs::curve25519::WrappedScalar,
     SigningShare,
     |value: &SigningShare| {
-        let scalar: vsss_rs::curve25519_dalek::Scalar = vsss_rs::curve25519_dalek::Scalar::try_from(value)?;
+        let scalar: vsss_rs::curve25519_dalek::Scalar =
+            vsss_rs::curve25519_dalek::Scalar::try_from(value)?;
         Ok(Self(scalar))
     }
 );

@@ -51,11 +51,11 @@
 //!
 //! let share1 = SigningShare {
 //!     scheme,
-//!     value: shares[0].value().to_vec(),
+//!     value: shares[0].value_vec()[1..].to_vec(),
 //! };
 //! let share2 = SigningShare {
 //!    scheme,
-//!   value: shares[1].value().to_vec(),
+//!   value: shares[1].value_vec()[1..].to_vec(),
 //! };
 //! let group_key = VerifyingKey::try_from((scheme, pubkey)).unwrap();
 //!

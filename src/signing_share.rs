@@ -227,12 +227,7 @@ mod tests {
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
             let share = vsss_rs::curve25519::WrappedScalar::random(&mut rng);
-            let share: SigningShare = (
-                Scheme::Ed25519Sha512,
-                share,
-            )
-                .try_into()
-                .unwrap();
+            let share: SigningShare = (Scheme::Ed25519Sha512, share).try_into().unwrap();
             let frost_share = vsss_rs::curve25519::WrappedScalar::try_from(&share);
             assert!(frost_share.is_ok());
             let frost_share = frost_share.unwrap();
