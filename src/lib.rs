@@ -298,6 +298,12 @@ impl Scheme {
         secret_share: &SigningShare,
         rng: &mut R,
     ) -> FrostResult<(SigningNonces, SigningCommitments)> {
+        if secret_share.scheme != *self {
+            return Err(Error::General(format!(
+                "mismatched schemes for secret_share: expected {}, found {}",
+                self, secret_share.scheme
+            )));
+        }
         match self {
             Self::Ed25519Sha512 => round1::<frost_ed25519::Ed25519Sha512, R>(secret_share, rng),
             Self::Ed448Shake256 => round1::<frost_ed448::Ed448Shake256, R>(secret_share, rng),
@@ -323,6 +329,26 @@ impl Scheme {
         signing_nonce: &SigningNonces,
         key_package: &KeyPackage,
     ) -> FrostResult<SignatureShare> {
+        if key_package.identifier.scheme != *self {
+            return Err(Error::General(format!(
+                "mismatched schemes for key_package: expected {}, found {}",
+                self, key_package.identifier.scheme
+            )));
+        }
+        if signing_nonce.scheme != *self {
+            return Err(Error::General(format!(
+                "mismatched schemes for signing_nonce: expected {}, found {}",
+                self, signing_nonce.scheme
+            )));
+        }
+        if signing_commitments
+            .iter()
+            .any(|(id, c)| id.scheme != *self || c.scheme != *self)
+        {
+            return Err(Error::General(
+                "mismatched schemes for signing_commitments".to_string(),
+            ));
+        }
         match self {
             Self::Ed25519Sha512 => round2::<frost_ed25519::Ed25519Sha512>(
                 message,
@@ -385,6 +411,36 @@ impl Scheme {
         signer_pubkeys: &[(Identifier, VerifyingShare)],
         verifying_key: &VerifyingKey,
     ) -> FrostResult<Signature> {
+        if signer_pubkeys
+            .iter()
+            .any(|(id, v)| id.scheme != *self || v.scheme != *self)
+        {
+            return Err(Error::General(
+                "mismatched schemes for signer_pubkeys".to_string(),
+            ));
+        }
+        if signing_commitments
+            .iter()
+            .any(|(id, c)| id.scheme != *self || c.scheme != *self)
+        {
+            return Err(Error::General(
+                "mismatched schemes for signing_commitments".to_string(),
+            ));
+        }
+        if signature_shares
+            .iter()
+            .any(|(id, s)| id.scheme != *self || s.scheme != *self)
+        {
+            return Err(Error::General(
+                "mismatched schemes for signature_shares".to_string(),
+            ));
+        }
+        if verifying_key.scheme != *self {
+            return Err(Error::General(format!(
+                "mismatched schemes for verifying_key: expected {}, found {}",
+                self, verifying_key.scheme
+            )));
+        }
         match self {
             Self::Ed25519Sha512 => aggregate::<frost_ed25519::Ed25519Sha512>(
                 message,
@@ -453,6 +509,18 @@ impl Scheme {
         verifying_key: &VerifyingKey,
         signature: &Signature,
     ) -> FrostResult<()> {
+        if verifying_key.scheme != *self {
+            return Err(Error::General(format!(
+                "mismatched schemes for verifying_key: expected {}, found {}",
+                self, verifying_key.scheme
+            )));
+        }
+        if signature.scheme != *self {
+            return Err(Error::General(format!(
+                "mismatched schemes for signature: expected {}, found {}",
+                self, signature.scheme
+            )));
+        }
         match self {
             Self::Ed25519Sha512 => {
                 verify::<frost_ed25519::Ed25519Sha512>(message, verifying_key, signature)
@@ -482,6 +550,12 @@ impl Scheme {
 
     /// Get the [`VerifyingShare`] from a [`SigningShare`]
     pub fn verifying_share(&self, signing_share: &SigningShare) -> FrostResult<VerifyingShare> {
+        if signing_share.scheme != *self {
+            return Err(Error::General(format!(
+                "mismatched schemes for signing_share: expected {}, found {}",
+                self, signing_share.scheme
+            )));
+        }
         match self {
             Self::Ed25519Sha512 => verifying_share::<frost_ed25519::Ed25519Sha512>(signing_share),
             Self::Ed448Shake256 => verifying_share::<frost_ed448::Ed448Shake256>(signing_share),
