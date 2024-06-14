@@ -40,7 +40,7 @@ impl<C: Ciphersuite> TryFrom<&KeyPackage> for frost_core::keys::KeyPackage<C> {
     type Error = Error;
 
     fn try_from(value: &KeyPackage) -> Result<Self, Self::Error> {
-        let identifier = value.identifier.try_into()?;
+        let identifier = (&value.identifier).try_into()?;
         let secret_share: frost_core::keys::SigningShare<C> = (&value.secret_share).try_into()?;
         let verifying_share = frost_core::keys::VerifyingShare::<C>::from(secret_share);
         let group_public = (&value.verifying_key).try_into()?;

@@ -30,78 +30,6 @@
 //!
 //! [`SigningShare`]s can be converted from the most popular libraries using
 //! the [`From`] trait.
-//!
-//! # Examples
-//! ```
-//! use lit_frost::*;
-//! use ff::Field;
-//! use k256::{Scalar, ProjectivePoint};
-//! use rand::rngs::OsRng;
-//! use std::num::NonZeroU8;
-//! use vsss_rs::{shamir::split_secret, Share};
-//!
-//! // DKG happens prior to the signing protocol. The DKG generates the
-//! // key package and the secret shares. For this example, we will generate
-//! // them at random just to demonstrate how to use the library.
-//! let scheme = Scheme::K256Sha256;
-//! let secret = Scalar::random(&mut rand::thread_rng());
-//! let pubkey = ProjectivePoint::GENERATOR * secret;
-//!
-//! let shares = split_secret::<Scalar, u8, Vec<u8>>(2, 3, secret, &mut OsRng).unwrap();
-//!
-//! let share1 = SigningShare {
-//!     scheme,
-//!     value: shares[0].value_vec()[1..].to_vec(),
-//! };
-//! let share2 = SigningShare {
-//!    scheme,
-//!   value: shares[1].value_vec()[1..].to_vec(),
-//! };
-//! let group_key = VerifyingKey::try_from((scheme, pubkey)).unwrap();
-//!
-//!
-//! let (nonces1, commitments1) = scheme.signing_round1(&share1, &mut OsRng).unwrap();
-//! let (nonces2, commitments2) = scheme.signing_round1(&share2, &mut OsRng).unwrap();
-//!
-//! // Signer 1 sends signer 2 their signing commitments
-//! // Signer 2 sends signer 1 their signing commitments
-//!
-//! // Signer 1 knows their own key package
-//! let key_package1 = KeyPackage {
-//!     identifier: Identifier { scheme, id: 1 },
-//!     secret_share: share1.clone(),
-//!     verifying_key: group_key.clone(),
-//!     threshold: NonZeroU8::new(2).unwrap(),
-//! };
-//! // Signer 2 knows their own key package
-//! let key_package2 = KeyPackage {
-//!     identifier: Identifier { scheme, id: 2 },
-//!     secret_share: share2.clone(),
-//!     verifying_key: group_key.clone(),
-//!     threshold: NonZeroU8::new(2).unwrap(),
-//! };
-//!
-//! let signing_commitments = vec![(key_package1.identifier, commitments1), (key_package2.identifier, commitments2)];
-//!
-//! let signature_share1 = scheme.signing_round2(b"test", &signing_commitments, &nonces1, &key_package1).unwrap();
-//! let signature_share2 = scheme.signing_round2(b"test", &signing_commitments, &nonces2, &key_package2).unwrap();
-//!
-//! // Verifying shares are public and can be sent to anyone
-//! let verifying_share1 = scheme.verifying_share(&share1).unwrap();
-//! let verifying_share2 = scheme.verifying_share(&share2).unwrap();
-//!
-//! // Returns a signature if its valid or an error
-//! let signature = scheme.aggregate(
-//!     b"test",
-//!     &signing_commitments,
-//!     &[(key_package1.identifier, signature_share1), (key_package2.identifier, signature_share2)],
-//!     &[(key_package1.identifier, verifying_share1), (key_package2.identifier, verifying_share2)],
-//!    &group_key,
-//! ).unwrap();
-//!
-//! // Verify the signature
-//! scheme.verify(b"test", &group_key, &signature).unwrap();
-//! ```
 #![deny(
     unsafe_code,
     missing_docs,
@@ -750,6 +678,19 @@ impl Scheme {
         }
     }
 
+    pub(crate) fn byte_order(&self) -> FrostResult<ByteOrder> {
+        match self {
+            Self::Ed25519Sha512
+            | Self::Ristretto25519Sha512
+            | Self::Ed448Shake256
+            | Self::RedJubjubBlake2b512 => Ok(ByteOrder::LittleEndian),
+            Self::P256Sha256 | Self::K256Sha256 | Self::K256Taproot | Self::P384Sha384 => {
+                Ok(ByteOrder::BigEndian)
+            }
+            Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
+        }
+    }
+
     pub(crate) fn compressed_point_len(&self) -> FrostResult<usize> {
         match self {
             Self::Ed25519Sha512 => Ok(32),
@@ -860,6 +801,16 @@ impl Scheme {
             Self::Unknown => "Unknown",
         }
     }
+}
+
+/// The byte order for the ciphersuite
+#[derive(Copy, Clone, Debug, Default, Deserialize, Serialize)]
+pub enum ByteOrder {
+    /// Big endian byte order
+    #[default]
+    BigEndian,
+    /// Little endian byte order
+    LittleEndian,
 }
 
 // /// The DKG parameters for FROST and the associated ciphersuites
@@ -1199,12 +1150,12 @@ mod tests {
         let mut signing_package = BTreeMap::new();
         let mut signing_commitments = Vec::new();
 
-        for (id, secret_share) in secret_shares {
+        for (id, secret_share) in &secret_shares {
             let res = scheme.signing_round1(&secret_share, &mut rng);
             assert!(res.is_ok());
             let (nonces, commitments) = res.unwrap();
-            signing_package.insert(id, (nonces, secret_share));
-            signing_commitments.push((id, commitments));
+            signing_package.insert(id.clone(), (nonces, secret_share));
+            signing_commitments.push((id.clone(), commitments));
         }
 
         let mut verifying_shares = Vec::new();

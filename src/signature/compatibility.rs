@@ -163,12 +163,12 @@ mod tests {
         let mut signing_package = BTreeMap::new();
         let mut signing_commitments = Vec::new();
 
-        for (id, secret_share) in secret_shares {
+        for (id, secret_share) in &secret_shares {
             let res = SCHEME.signing_round1(&secret_share, &mut rng);
             assert!(res.is_ok());
             let (nonces, commitments) = res.unwrap();
             signing_package.insert(id, (nonces, secret_share));
-            signing_commitments.push((id, commitments));
+            signing_commitments.push((id.clone(), commitments));
         }
 
         let mut verifying_shares = Vec::new();
@@ -239,12 +239,12 @@ mod tests {
         let mut signing_package = BTreeMap::new();
         let mut signing_commitments = Vec::new();
 
-        for (id, secret_share) in secret_shares {
+        for (id, secret_share) in &secret_shares {
             let res = SCHEME.signing_round1(&secret_share, &mut rng);
             assert!(res.is_ok());
             let (nonces, commitments) = res.unwrap();
             signing_package.insert(id, (nonces, secret_share));
-            signing_commitments.push((id, commitments));
+            signing_commitments.push((id.clone(), commitments));
         }
 
         let mut verifying_shares = Vec::new();
