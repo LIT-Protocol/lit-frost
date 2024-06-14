@@ -6,6 +6,7 @@ use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::fmt::{self, Display, Formatter};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// Comprised of hiding and binding nonces
 ///
@@ -177,6 +178,15 @@ impl Display for SigningNonces {
 }
 
 from_bytes_impl!(SigningNonces);
+
+impl Zeroize for SigningNonces {
+    fn zeroize(&mut self) {
+        self.hiding.zeroize();
+        self.binding.zeroize();
+    }
+}
+
+impl ZeroizeOnDrop for SigningNonces {}
 
 impl SigningNonces {
     /// Return true if the nonces are valid aka not zero

@@ -2,6 +2,7 @@ mod compatibility;
 
 use crate::{Error, Scheme};
 use frost_core::{Ciphersuite, Field, Group};
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// A secret scalar value representing a signer’s share of the group secret.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
@@ -50,6 +51,14 @@ impl<C: Ciphersuite> TryFrom<&SigningShare> for frost_core::keys::SigningShare<C
 from_bytes_impl!(SigningShare);
 serde_impl!(SigningShare, scalar_len, 58);
 display_impl!(SigningShare);
+
+impl Zeroize for SigningShare {
+    fn zeroize(&mut self) {
+        self.value.zeroize();
+    }
+}
+
+impl ZeroizeOnDrop for SigningShare {}
 
 impl SigningShare {
     ct_is_zero_impl!();
