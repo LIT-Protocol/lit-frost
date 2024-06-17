@@ -736,8 +736,8 @@ impl Scheme {
     /// Perform a key generation with a trusted dealer.
     pub fn generate_with_trusted_dealer<R: CryptoRng + RngCore>(
         &self,
-        min_signers: u8,
-        max_signers: u8,
+        min_signers: u16,
+        max_signers: u16,
         rng: &mut R,
     ) -> FrostResult<(BTreeMap<Identifier, SigningShare>, VerifyingKey)> {
         match self {
@@ -1053,13 +1053,13 @@ fn preprocess<C: Ciphersuite, R: CryptoRng + RngCore>(
 
 // #[cfg(test)]
 fn generate_with_trusted_dealer<C: Ciphersuite, R: CryptoRng + RngCore>(
-    min_signers: u8,
-    max_signers: u8,
+    min_signers: u16,
+    max_signers: u16,
     rng: &mut R,
 ) -> FrostResult<(BTreeMap<Identifier, SigningShare>, VerifyingKey)> {
     let (shares, public_package) = frost_core::keys::generate_with_dealer::<C, R>(
-        max_signers as u16,
-        min_signers as u16,
+        max_signers,
+        min_signers,
         frost_core::keys::IdentifierList::<C>::Default,
         rng,
     )
@@ -1141,7 +1141,7 @@ mod tests {
     #[case::taproot(Scheme::K256Taproot)]
     fn rounds(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
-        const THRESHOLD: u8 = 3;
+        const THRESHOLD: u16 = 3;
         let mut rng = rand::rngs::OsRng;
         let (secret_shares, verifying_key) = scheme
             .generate_with_trusted_dealer(THRESHOLD, 5, &mut rng)
@@ -1169,7 +1169,7 @@ mod tests {
                     identifier: id.clone(),
                     secret_share: secret_share.clone(),
                     verifying_key: verifying_key.clone(),
-                    threshold: NonZeroU8::new(THRESHOLD).unwrap(),
+                    threshold: NonZeroU16::new(THRESHOLD).unwrap(),
                 },
             );
             let signature = res.unwrap();
@@ -1199,7 +1199,7 @@ mod tests {
     #[case::taproot(Scheme::K256Taproot)]
     fn full(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
-        const THRESHOLD: u8 = 3;
+        const THRESHOLD: u16 = 3;
         let mut rng = rand::rngs::OsRng;
         let (secret_shares, verifying_key) = scheme
             .generate_with_trusted_dealer(THRESHOLD, 5, &mut rng)
@@ -1243,7 +1243,7 @@ mod tests {
                         identifier: id.clone(),
                         secret_share: secret_share.clone(),
                         verifying_key: verifying_key.clone(),
-                        threshold: NonZeroU8::new(THRESHOLD).unwrap(),
+                        threshold: NonZeroU16::new(THRESHOLD).unwrap(),
                     },
                 );
                 assert!(res.is_ok());

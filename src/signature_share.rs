@@ -1,6 +1,8 @@
 use crate::{Error, Scheme};
 use frost_core::{Ciphersuite, Field, Group};
 
+const MAX_SIGNATURE_SHARE_LEN: usize = 58;
+
 /// A participant’s signature share, which is aggregated with all other signer’s shares into the joint signature.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct SignatureShare {
@@ -49,7 +51,7 @@ impl<C: Ciphersuite> TryFrom<&SignatureShare> for frost_core::round2::SignatureS
 }
 
 from_bytes_impl!(SignatureShare);
-serde_impl!(SignatureShare, scalar_len, 58);
+serde_impl!(SignatureShare, scalar_len, MAX_SIGNATURE_SHARE_LEN);
 display_impl!(SignatureShare);
 
 impl SignatureShare {

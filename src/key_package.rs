@@ -3,7 +3,7 @@ use frost_core::Ciphersuite;
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{self, Display, Formatter},
-    num::NonZeroU8,
+    num::NonZeroU16,
 };
 
 /// The frost keys used for signing generated during the DKG.
@@ -16,7 +16,7 @@ pub struct KeyPackage {
     /// The public key of the group.
     pub verifying_key: VerifyingKey,
     /// The threshold of the group.
-    pub threshold: NonZeroU8,
+    pub threshold: NonZeroU16,
 }
 
 impl<C: Ciphersuite> From<frost_core::keys::KeyPackage<C>> for KeyPackage {
@@ -31,7 +31,7 @@ impl<C: Ciphersuite> From<&frost_core::keys::KeyPackage<C>> for KeyPackage {
             identifier: s.identifier().into(),
             secret_share: s.signing_share().into(),
             verifying_key: s.verifying_key().into(),
-            threshold: NonZeroU8::new(*s.min_signers() as u8).expect("Threshold is zero"),
+            threshold: NonZeroU16::new(*s.min_signers()).expect("Threshold is zero"),
         }
     }
 }
@@ -50,7 +50,7 @@ impl<C: Ciphersuite> TryFrom<&KeyPackage> for frost_core::keys::KeyPackage<C> {
             secret_share,
             verifying_share,
             group_public,
-            threshold as u16,
+            threshold,
         );
         Ok(key_package)
     }

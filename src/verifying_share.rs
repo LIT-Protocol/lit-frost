@@ -1,6 +1,8 @@
 use crate::{Error, Scheme};
 use frost_core::{Ciphersuite, Group};
 
+const MAX_VERIFYING_SHARE_LEN: usize = 58;
+
 /// A public group element that represents a single signer’s public verification share.
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct VerifyingShare {
@@ -46,7 +48,11 @@ impl<C: Ciphersuite> TryFrom<&VerifyingShare> for frost_core::keys::VerifyingSha
 }
 
 from_bytes_impl!(VerifyingShare);
-serde_impl!(VerifyingShare, compressed_point_len, 58);
+serde_impl!(
+    VerifyingShare,
+    compressed_point_len,
+    MAX_VERIFYING_SHARE_LEN
+);
 display_impl!(VerifyingShare);
 
 impl VerifyingShare {

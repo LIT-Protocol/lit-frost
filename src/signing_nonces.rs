@@ -118,7 +118,7 @@ impl<'de> Deserialize<'de> for SigningNonces {
                 type Value = SigningNonces;
 
                 fn expecting(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-                    formatter.write_str("a tuple of (u8, Vec<u8>)")
+                    formatter.write_str("a byte sequence")
                 }
 
                 fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>

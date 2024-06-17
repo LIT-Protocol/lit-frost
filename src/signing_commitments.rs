@@ -1,6 +1,8 @@
 use crate::{Error, Scheme};
 use frost_core::Ciphersuite;
 
+const MAX_SIGNING_COMMITMENT_LEN: usize = 120;
+
 /// Published by each participant in the first round of the signing protocol.
 ///
 /// This step can be batched using Scheme::pregenerate_signing_nonces.
@@ -44,7 +46,11 @@ impl<C: Ciphersuite> TryFrom<&SigningCommitments> for frost_core::round1::Signin
 }
 
 from_bytes_impl!(SigningCommitments);
-serde_impl!(SigningCommitments, commitment_len, 120);
+serde_impl!(
+    SigningCommitments,
+    commitment_len,
+    MAX_SIGNING_COMMITMENT_LEN
+);
 display_impl!(SigningCommitments);
 
 impl SigningCommitments {

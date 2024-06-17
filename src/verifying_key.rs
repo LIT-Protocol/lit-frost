@@ -3,6 +3,8 @@ mod compatibility;
 use crate::{Error, Scheme};
 use frost_core::{Ciphersuite, Group};
 
+const MAX_VERIFYING_KEY_LEN: usize = 58;
+
 /// A valid verifying key for Schnorr signatures
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct VerifyingKey {
@@ -46,7 +48,7 @@ impl<C: Ciphersuite> TryFrom<&VerifyingKey> for frost_core::VerifyingKey<C> {
 }
 
 from_bytes_impl!(VerifyingKey);
-serde_impl!(VerifyingKey, compressed_point_len, 58);
+serde_impl!(VerifyingKey, compressed_point_len, MAX_VERIFYING_KEY_LEN);
 display_impl!(VerifyingKey);
 
 impl VerifyingKey {

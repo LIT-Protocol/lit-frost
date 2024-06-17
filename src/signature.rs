@@ -3,6 +3,8 @@ mod compatibility;
 use crate::{Error, Scheme};
 use frost_core::Ciphersuite;
 
+const MAX_SIGNATURE_LEN: usize = 115;
+
 /// A Schnorr signature
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Default)]
 pub struct Signature {
@@ -48,7 +50,7 @@ impl<C: Ciphersuite> TryFrom<&Signature> for frost_core::Signature<C> {
 }
 
 from_bytes_impl!(Signature);
-serde_impl!(Signature, signature_len, 115);
+serde_impl!(Signature, signature_len, MAX_SIGNATURE_LEN);
 display_impl!(Signature);
 
 impl Signature {
