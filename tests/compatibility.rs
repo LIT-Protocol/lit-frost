@@ -1,7 +1,7 @@
 use lit_frost::{KeyPackage, Scheme, Signature, VerifyingKey};
 use signature_crypto::Verifier;
 use std::collections::BTreeMap;
-use std::num::NonZeroU8;
+use std::num::NonZeroU16;
 
 #[test]
 fn k256_taproot() {
@@ -44,7 +44,7 @@ fn jubjub() {
 }
 
 fn generate(msg: &[u8], scheme: Scheme) -> (Signature, VerifyingKey) {
-    const THRESHOLD: u8 = 3;
+    const THRESHOLD: u16 = 3;
     let mut rng = rand::rngs::OsRng;
     let (secret_shares, verifying_key) = scheme
         .generate_with_trusted_dealer(THRESHOLD, 5, &mut rng)
@@ -72,7 +72,7 @@ fn generate(msg: &[u8], scheme: Scheme) -> (Signature, VerifyingKey) {
                 identifier: id.clone(),
                 secret_share: secret_share.clone(),
                 verifying_key: verifying_key.clone(),
-                threshold: NonZeroU8::new(THRESHOLD).unwrap(),
+                threshold: NonZeroU16::new(THRESHOLD).unwrap(),
             },
         );
         let signature = res.unwrap();

@@ -98,9 +98,7 @@ use std::{
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy, Default)]
 #[repr(u8)]
 pub enum Scheme {
-    /// Unknown scheme
     #[default]
-    Unknown = 0,
     /// Compute the Ed25519 signature using the SHA-512 hash function
     Ed25519Sha512 = 1,
     /// Compute the Ed448 signature using the SHAKE-256 hash function
@@ -147,18 +145,20 @@ impl FromStr for Scheme {
     }
 }
 
-impl From<u8> for Scheme {
-    fn from(value: u8) -> Self {
+impl TryFrom<u8> for Scheme {
+    type Error = Error;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            1 => Self::Ed25519Sha512,
-            2 => Self::Ed448Shake256,
-            3 => Self::Ristretto25519Sha512,
-            4 => Self::K256Sha256,
-            5 => Self::P256Sha256,
-            6 => Self::P384Sha384,
-            7 => Self::RedJubjubBlake2b512,
-            8 => Self::K256Taproot,
-            _ => Self::Unknown,
+            1 => Ok(Self::Ed25519Sha512),
+            2 => Ok(Self::Ed448Shake256),
+            3 => Ok(Self::Ristretto25519Sha512),
+            4 => Ok(Self::K256Sha256),
+            5 => Ok(Self::P256Sha256),
+            6 => Ok(Self::P384Sha384),
+            7 => Ok(Self::RedJubjubBlake2b512),
+            8 => Ok(Self::K256Taproot),
+            _ => Err(Error::General(format!("Unknown scheme: {}", value))),
         }
     }
 }
@@ -180,7 +180,7 @@ impl<'de> Deserialize<'de> for Scheme {
             Self::from_str(&s).map_err(serde::de::Error::custom)
         } else {
             let u = u8::deserialize(d)?;
-            Ok(Self::from(u))
+            Self::try_from(u).map_err(serde::de::Error::custom)
         }
     }
 }
@@ -216,7 +216,6 @@ impl Scheme {
             Self::K256Taproot => {
                 preprocess::<frost_taproot::Secp256K1Taproot, R>(count, secret_share, rng)
             }
-            Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
 
@@ -245,7 +244,6 @@ impl Scheme {
                 round1::<frost_redjubjub::JubjubBlake2b512, R>(secret_share, rng)
             }
             Self::K256Taproot => round1::<frost_taproot::Secp256K1Taproot, R>(secret_share, rng),
-            Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
 
@@ -326,7 +324,6 @@ impl Scheme {
                 signing_nonce,
                 key_package,
             ),
-            Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
 
@@ -426,7 +423,6 @@ impl Scheme {
                 signer_pubkeys,
                 verifying_key,
             ),
-            Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
 
@@ -472,7 +468,6 @@ impl Scheme {
                 verifying_key,
                 signature,
             ),
-            Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
 
@@ -497,7 +492,6 @@ impl Scheme {
                 verifying_share::<frost_redjubjub::JubjubBlake2b512>(signing_share)
             }
             Self::K256Taproot => verifying_share::<frost_taproot::Secp256K1Taproot>(signing_share),
-            Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
 
@@ -566,7 +560,6 @@ impl Scheme {
                     gennaro_dkg::Parameters::<k256::ProjectivePoint>::new(min_signers, max_signers),
                 )?,
             )),
-            Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
 
@@ -635,36 +628,10 @@ impl Scheme {
                     gennaro_dkg::Parameters::<k256::ProjectivePoint>::new(min_signers, max_signers),
                 )?,
             )),
-            Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
 
-    // pub fn get_dkg_reshare_participant(
-    //     &self,
-    //     id: NonZeroUsize,
-    //     min_signers: NonZeroUsize,
-    //     max_signers: NonZeroUsize,
-    //     secret_share: &SigningShare,
-    //     share_ids: &[Identifier],
-    // ) -> FrostResult<FrostDkgSecretParticipant> {
-    //     if secret_share.scheme != *self {
-    //         return Err(Error::General("Secret share scheme does not match ciphersuite".to_string()));
-    //     }
-    //     match self {
-    //         Self::Ed25519Sha512 => {
-    //             let share: curve25519_dalek::Scalar = secret_share.try_into()?;
-    //
-    //             Ok(FrostDkgSecretParticipant::Ed25519Sha512(
-    //                 gennaro_dkg::SecretParticipant::with_secret(id, gennaro_dkg::Parameters::<vsss_rs::curve25519::WrappedEdwards>::new(
-    //                     min_signers,
-    //                     max_signers,
-    //                 ))?
-    //             ))
-    //         }
-    //     }
-    // }
-
-    pub(crate) fn scalar_len(&self) -> FrostResult<usize> {
+    pub(crate) const fn scalar_len(&self) -> FrostResult<usize> {
         match self {
             Self::Ed25519Sha512 => Ok(32),
             Self::Ed448Shake256 => Ok(57),
@@ -674,11 +641,10 @@ impl Scheme {
             Self::P384Sha384 => Ok(48),
             Self::RedJubjubBlake2b512 => Ok(32),
             Self::K256Taproot => Ok(32),
-            Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
         }
     }
 
-    pub(crate) fn byte_order(&self) -> FrostResult<ByteOrder> {
+    pub(crate) const fn byte_order(&self) -> FrostResult<ByteOrder> {
         match self {
             Self::Ed25519Sha512
             | Self::Ristretto25519Sha512
@@ -687,11 +653,10 @@ impl Scheme {
             Self::P256Sha256 | Self::K256Sha256 | Self::K256Taproot | Self::P384Sha384 => {
                 Ok(ByteOrder::BigEndian)
             }
-            Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
         }
     }
 
-    pub(crate) fn compressed_point_len(&self) -> FrostResult<usize> {
+    pub(crate) const fn compressed_point_len(&self) -> FrostResult<usize> {
         match self {
             Self::Ed25519Sha512 => Ok(32),
             Self::Ed448Shake256 => Ok(57),
@@ -701,11 +666,10 @@ impl Scheme {
             Self::P384Sha384 => Ok(49),
             Self::RedJubjubBlake2b512 => Ok(32),
             Self::K256Taproot => Ok(33),
-            Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
         }
     }
 
-    pub(crate) fn commitment_len(&self) -> FrostResult<usize> {
+    pub(crate) const fn commitment_len(&self) -> FrostResult<usize> {
         match self {
             Self::Ed25519Sha512 => Ok(69),
             Self::Ed448Shake256 => Ok(119),
@@ -715,11 +679,10 @@ impl Scheme {
             Self::P384Sha384 => Ok(103),
             Self::RedJubjubBlake2b512 => Ok(69),
             Self::K256Taproot => Ok(71),
-            Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
         }
     }
 
-    pub(crate) fn signature_len(&self) -> FrostResult<usize> {
+    pub(crate) const fn signature_len(&self) -> FrostResult<usize> {
         match self {
             Self::Ed25519Sha512 => Ok(64),
             Self::Ed448Shake256 => Ok(114),
@@ -729,7 +692,6 @@ impl Scheme {
             Self::P384Sha384 => Ok(97),
             Self::RedJubjubBlake2b512 => Ok(64),
             Self::K256Taproot => Ok(65),
-            Self::Unknown => Err(Error::General("Unknown ciphersuite".to_string())),
         }
     }
 
@@ -783,7 +745,6 @@ impl Scheme {
                     rng,
                 )
             }
-            Self::Unknown => Err(Error::General("Unknown scheme".to_string())),
         }
     }
 
@@ -798,7 +759,6 @@ impl Scheme {
             Self::P384Sha384 => "P384Sha384",
             Self::RedJubjubBlake2b512 => "RedJubjubBlake2b512",
             Self::K256Taproot => "K256Taproot",
-            Self::Unknown => "Unknown",
         }
     }
 }
@@ -1103,6 +1063,7 @@ pub(crate) fn is_zero(value: &[u8]) -> subtle::Choice {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::num::NonZeroU16;
     use rstest::*;
 
     #[rstest]

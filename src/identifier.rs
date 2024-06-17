@@ -109,7 +109,6 @@ impl<C: Ciphersuite> From<&frost_core::Identifier<C>> for Identifier {
                 scheme: Scheme::K256Taproot,
                 id: s.serialize().as_ref().to_vec(),
             },
-            Scheme::Unknown => panic!("Unknown ciphersuite"),
         }
     }
 }
@@ -164,11 +163,12 @@ impl<'de> Deserialize<'de> for Identifier {
             (scheme, id)
         } else {
             let (ty, id) = <(u8, Vec<u8>)>::deserialize(d)?;
-            (ty.into(), id)
+            (
+                ty.try_into()
+                    .map_err(|e: Error| serde::de::Error::custom(e.to_string()))?,
+                id,
+            )
         };
-        if scheme == Scheme::Unknown {
-            return Err(serde::de::Error::custom("Unknown ciphersuite"));
-        }
         Ok(Self { scheme, id })
     }
 }

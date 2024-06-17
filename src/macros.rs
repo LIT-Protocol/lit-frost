@@ -51,7 +51,8 @@ macro_rules! serde_impl {
                             let scheme: Scheme = seq
                                 .next_element::<u8>()?
                                 .ok_or_else(|| serde::de::Error::custom("Missing scheme"))?
-                                .into();
+                                .try_into()
+                                .map_err(|e: Error| serde::de::Error::custom(e.to_string()))?;
                             let length = scheme
                                 .$method_length()
                                 .map_err(|e| serde::de::Error::custom(e.to_string()))?;

@@ -128,7 +128,8 @@ impl<'de> Deserialize<'de> for SigningNonces {
                     let scheme = seq
                         .next_element::<u8>()?
                         .ok_or_else(|| serde::de::Error::custom("Missing scheme"))?;
-                    let scheme = Scheme::from(scheme);
+                    let scheme = Scheme::try_from(scheme)
+                        .map_err(|e: Error| serde::de::Error::custom(e.to_string()))?;
                     let length = scheme
                         .scalar_len()
                         .map_err(|e| serde::de::Error::custom(e.to_string()))?;

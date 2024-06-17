@@ -134,6 +134,7 @@ mod tests {
     use rand::Rng;
     use sha2::{Digest, Sha256};
     use signature_crypto::hazmat::PrehashVerifier;
+    use std::num::NonZeroU16;
 
     #[test]
     fn ed25519_signature_conversion_simple() {
@@ -182,7 +183,7 @@ mod tests {
                     identifier: id.clone(),
                     secret_share: secret_share.clone(),
                     verifying_key: verifying_key.clone(),
-                    threshold: NonZeroU8::new(2).unwrap(),
+                    threshold: NonZeroU16::new(2).unwrap(),
                 },
             );
             let signature = res.unwrap();
@@ -258,7 +259,7 @@ mod tests {
                     identifier: id.clone(),
                     secret_share: secret_share.clone(),
                     verifying_key: verifying_key.clone(),
-                    threshold: NonZeroU8::new(2).unwrap(),
+                    threshold: NonZeroU16::new(2).unwrap(),
                 },
             );
             let signature = res.unwrap();
@@ -333,7 +334,7 @@ mod tests {
                         identifier: id.clone(),
                         secret_share: secret_share.clone(),
                         verifying_key: verifying_key.clone(),
-                        threshold: NonZeroU8::new(2).unwrap(),
+                        threshold: NonZeroU16::new(2).unwrap(),
                     },
                 );
                 let signature = res.unwrap();
