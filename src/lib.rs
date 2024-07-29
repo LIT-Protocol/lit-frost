@@ -94,6 +94,11 @@ use std::{
     str::FromStr,
 };
 
+/// Export the RedJubJub Generator point
+pub fn red_jubjub_generator() -> jubjub::SubgroupPoint {
+    <frost_redjubjub::JubjubGroup as frost_core::Group>::generator()
+}
+
 /// The FROST supported signature schemes
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy, Default)]
 #[repr(u8)]
@@ -1064,7 +1069,11 @@ pub(crate) fn is_zero(value: &[u8]) -> subtle::Choice {
 mod tests {
     use super::*;
     use core::num::NonZeroU16;
+    use frost_core::Group;
+    use group::GroupEncoding;
+    use rand_core::SeedableRng;
     use rstest::*;
+    use vsss_rs::ShareIdentifier;
 
     #[rstest]
     #[case::ed25519(Scheme::Ed25519Sha512, 32)]
@@ -1224,5 +1233,199 @@ mod tests {
             let signature = res.unwrap();
             assert!(scheme.verify(MSG, &verifying_key, &signature).is_ok());
         }
+    }
+
+    #[test]
+    fn dkg() {
+        const MSG: &[u8] = b"test";
+        let threshold: usize = 2;
+        let limit: usize = 3;
+        let scheme = Scheme::RedJubjubBlake2b512;
+
+        let mut rng = rand_chacha::ChaCha8Rng::from_seed([0u8; 32]);
+
+        let params = gennaro_dkg::Parameters::<jubjub::SubgroupPoint>::with_generators(
+            NonZeroUsize::new(threshold).unwrap(),
+            NonZeroUsize::new(limit).unwrap(),
+            frost_redjubjub::JubjubGroup::generator(),
+            <jubjub::SubgroupPoint as group::Group>::generator(),
+        );
+        let mut p1 =
+            gennaro_dkg::SecretParticipant::new(NonZeroUsize::new(1).unwrap(), params).unwrap();
+
+        let mut p2 =
+            gennaro_dkg::SecretParticipant::new(NonZeroUsize::new(2).unwrap(), params).unwrap();
+
+        let mut p3 =
+            gennaro_dkg::SecretParticipant::new(NonZeroUsize::new(3).unwrap(), params).unwrap();
+
+        let (p1r1_bdata, p1r1_p2p) = p1.round1().unwrap();
+        let (p2r1_bdata, p2r1_p2p) = p2.round1().unwrap();
+        let (p3r1_bdata, p3r1_p2p) = p3.round1().unwrap();
+
+        let p1r2_bdata = p1
+            .round2(
+                maplit::btreemap! {
+                    2 => p2r1_bdata.clone(),
+                    3 => p3r1_bdata.clone(),
+                },
+                maplit::btreemap! {
+                    2 => p2r1_p2p[&1].clone(),
+                    3 => p3r1_p2p[&1].clone(),
+                },
+            )
+            .unwrap();
+
+        let p2r2_bdata = p2
+            .round2(
+                maplit::btreemap! {
+                    1 => p1r1_bdata.clone(),
+                    3 => p3r1_bdata.clone(),
+                },
+                maplit::btreemap! {
+                    1 => p1r1_p2p[&2].clone(),
+                    3 => p3r1_p2p[&2].clone(),
+                },
+            )
+            .unwrap();
+
+        let p3r2_bdata = p3
+            .round2(
+                maplit::btreemap! {
+                    1 => p1r1_bdata.clone(),
+                    2 => p2r1_bdata.clone(),
+                },
+                maplit::btreemap! {
+                    1 => p1r1_p2p[&3].clone(),
+                    2 => p2r1_p2p[&3].clone(),
+                },
+            )
+            .unwrap();
+
+        let p1r3_bdata = p1
+            .round3(&maplit::btreemap! {
+                2 => p2r2_bdata.clone(),
+                3 => p3r2_bdata.clone(),
+            })
+            .unwrap();
+        let p2r3_bdata = p2
+            .round3(&maplit::btreemap! {
+                1 => p1r2_bdata.clone(),
+                3 => p3r2_bdata.clone(),
+            })
+            .unwrap();
+        let p3r3_bdata = p3
+            .round3(&maplit::btreemap! {
+                1 => p1r2_bdata.clone(),
+                2 => p2r2_bdata.clone(),
+            })
+            .unwrap();
+
+        let p1r4_bdata = p1
+            .round4(&maplit::btreemap! {
+                2 => p2r3_bdata.clone(),
+                3 => p3r3_bdata.clone(),
+            })
+            .unwrap();
+        let p2r4_bdata = p2
+            .round4(&maplit::btreemap! {
+                1 => p1r3_bdata.clone(),
+                3 => p3r3_bdata.clone(),
+            })
+            .unwrap();
+        let p3r4_bdata = p3
+            .round4(&maplit::btreemap! {
+                1 => p1r3_bdata.clone(),
+                2 => p2r3_bdata.clone(),
+            })
+            .unwrap();
+
+        p1.round5(&maplit::btreemap! {
+            2 => p2r4_bdata.clone(),
+            3 => p3r4_bdata.clone(),
+        })
+        .unwrap();
+        p2.round5(&maplit::btreemap! {
+            1 => p1r4_bdata.clone(),
+            3 => p3r4_bdata.clone(),
+        })
+        .unwrap();
+        p3.round5(&maplit::btreemap! {
+            1 => p1r4_bdata.clone(),
+            2 => p2r4_bdata.clone(),
+        })
+        .unwrap();
+
+        let id1 = Identifier::from((scheme, 1u8));
+        let id2 = Identifier::from((scheme, 2u8));
+        let id3 = Identifier::from((scheme, 3u8));
+
+        let verifying_key = VerifyingKey {
+            scheme,
+            value: p1.get_public_key().unwrap().to_bytes().to_vec(),
+        };
+        let mut secret_shares = BTreeMap::new();
+
+        secret_shares.insert(
+            id1,
+            SigningShare {
+                scheme,
+                value: p1.get_secret_share().unwrap().to_bytes().to_vec(),
+            },
+        );
+        secret_shares.insert(
+            id2,
+            SigningShare {
+                scheme,
+                value: p2.get_secret_share().unwrap().to_bytes().to_vec(),
+            },
+        );
+        secret_shares.insert(
+            id3,
+            SigningShare {
+                scheme,
+                value: p3.get_secret_share().unwrap().to_bytes().to_vec(),
+            },
+        );
+
+        let mut signing_package = BTreeMap::new();
+        let mut signing_commitments = Vec::new();
+
+        for (id, secret_share) in &secret_shares {
+            let res = scheme.signing_round1(&secret_share, &mut rng);
+            assert!(res.is_ok());
+            let (nonces, commitments) = res.unwrap();
+            signing_package.insert(id.clone(), (nonces, secret_share));
+            signing_commitments.push((id.clone(), commitments));
+        }
+
+        let mut verifying_shares = Vec::new();
+        let mut signature_shares = Vec::new();
+        for (id, (nonces, secret_share)) in signing_package {
+            let res = scheme.signing_round2(
+                MSG,
+                &signing_commitments,
+                &nonces,
+                &KeyPackage {
+                    identifier: id.clone(),
+                    secret_share: secret_share.clone(),
+                    verifying_key: verifying_key.clone(),
+                    threshold: NonZeroU16::new(threshold as u16).unwrap(),
+                },
+            );
+            let signature = res.unwrap();
+            signature_shares.push((id.clone(), signature));
+            verifying_shares.push((id.clone(), scheme.verifying_share(&secret_share).unwrap()));
+        }
+
+        let res = scheme.aggregate(
+            MSG,
+            &signing_commitments,
+            &signature_shares,
+            &verifying_shares,
+            &verifying_key,
+        );
+        let signature = res.unwrap();
+        assert!(scheme.verify(MSG, &verifying_key, &signature).is_ok());
     }
 }
