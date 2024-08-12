@@ -20,7 +20,7 @@ frost-secp256k1 = { version = "1.0.0", git = "https://github.com/LIT-Protocol/fr
 frost-taproot = { version = "1.0.0", git = "https://github.com/LIT-Protocol/frost.git" }
 gennaro-dkg = "0.9.0-rc1"
 hex = "0.4"
-jubjub = { version = "0.10", git = "https://github.com/LIT-Protocol/jubjub.git" }
+jubjub = { package="jubjub-plus" , version = "0.10", git = "https://github.com/LIT-Protocol/jubjub.git" }
 k256 = { version = "0.13", features = ["arithmetic", "schnorr"] }
 p256 = { version = "0.13", features = ["arithmetic"] }
 p384 = { version = "0.13", features = ["arithmetic"] }
