@@ -1,6 +1,5 @@
 use crate::{Error, Identifier, Scheme};
 use vsss_rs::elliptic_curve::PrimeField;
-use vsss_rs::ShareIdentifier;
 
 try_from_scheme_ref!(Identifier, k256::Scalar, |scheme, id: &k256::Scalar| {
     match scheme {
