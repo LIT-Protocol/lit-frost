@@ -7,7 +7,7 @@ edition = "2021"
 anyhow = "1.0"
 curve25519-dalek = { version = "=4.2.2", features = ["rand_core", "group"], package = "curve25519-dalek-ml" }
 ed25519-dalek = "2.1"
-ed448-goldilocks = { version = "0.12", package = "ed448-goldilocks-plus" }
+ed448-goldilocks = { version = "0.13", package = "ed448-goldilocks-plus" }
 frost-core = { version = "1.0.0", features = ["internals"], git = "https://github.com/LIT-Protocol/frost.git" }
 frost-ed25519 = { version =  "1.0.0", git = "https://github.com/LIT-Protocol/frost.git" }
 frost-ed448 = { version = "1.0.0", git = "https://github.com/LIT-Protocol/frost.git" }
