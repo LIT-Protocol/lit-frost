@@ -25,7 +25,7 @@ impl<C: Ciphersuite> From<&frost_core::Signature<C>> for Signature {
         let scheme = C::ID.parse().expect("Unknown ciphersuite");
         Self {
             scheme,
-            value: s.serialize().as_ref().to_vec(),
+            value: s.serialize().expect("serialize to bytes"),
         }
     }
 }
@@ -42,9 +42,7 @@ impl<C: Ciphersuite> TryFrom<&Signature> for frost_core::Signature<C> {
                 "Ciphersuite does not match signature".to_string(),
             ));
         }
-        let bytes = C::SignatureSerialization::try_from(value.value.clone())
-            .map_err(|_| Error::General("Error converting signature from bytes".to_string()))?;
-        frost_core::Signature::<C>::deserialize(bytes)
+        frost_core::Signature::<C>::deserialize(value.value.as_slice())
             .map_err(|_| Error::General("Error deserializing signature".to_string()))
     }
 }
@@ -79,7 +77,7 @@ mod tests {
             let pt = C::Group::generator()
                 * <<<C as Ciphersuite>::Group as Group>::Field as Field>::random(&mut rng);
             let share = <<<C as Ciphersuite>::Group as Group>::Field as Field>::random(&mut rng);
-            let mut value = C::Group::serialize(&pt).as_ref().to_vec();
+            let mut value = C::Group::serialize(&pt).unwrap().as_ref().to_vec();
             value.extend_from_slice(
                 <<<C as Ciphersuite>::Group as Group>::Field as Field>::serialize(&share).as_ref(),
             );
@@ -107,7 +105,7 @@ mod tests {
             let pt = C::Group::generator()
                 * <<<C as Ciphersuite>::Group as Group>::Field as Field>::random(&mut rng);
             let share = <<<C as Ciphersuite>::Group as Group>::Field as Field>::random(&mut rng);
-            let mut value = C::Group::serialize(&pt).as_ref().to_vec();
+            let mut value = C::Group::serialize(&pt).unwrap().as_ref().to_vec();
             value.extend_from_slice(
                 <<<C as Ciphersuite>::Group as Group>::Field as Field>::serialize(&share).as_ref(),
             );

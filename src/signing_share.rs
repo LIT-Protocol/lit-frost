@@ -1,7 +1,7 @@
 mod compatibility;
 
 use crate::{Error, Scheme};
-use frost_core::{Ciphersuite, Field, Group};
+use frost_core::Ciphersuite;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 const MAX_SIGNING_SHARE_LEN: usize = 58;
@@ -26,7 +26,7 @@ impl<C: Ciphersuite> From<&frost_core::keys::SigningShare<C>> for SigningShare {
         let scheme = C::ID.parse().expect("Unknown ciphersuite");
         Self {
             scheme,
-            value: s.serialize().as_ref().to_vec(),
+            value: s.serialize(),
         }
     }
 }
@@ -40,12 +40,7 @@ impl<C: Ciphersuite> TryFrom<&SigningShare> for frost_core::keys::SigningShare<C
                 "Signing share scheme does not match ciphersuite".to_string(),
             ));
         }
-        let bytes =
-            <<C::Group as Group>::Field as Field>::Serialization::try_from(value.value.clone())
-                .map_err(|_| {
-                    Error::General("Error converting signing share from bytes".to_string())
-                })?;
-        frost_core::keys::SigningShare::<C>::deserialize(bytes)
+        frost_core::keys::SigningShare::<C>::deserialize(value.value.as_slice())
             .map_err(|_| Error::General("Error converting signing share".to_string()))
     }
 }
@@ -70,6 +65,7 @@ impl SigningShare {
 mod tests {
     use super::*;
     use rstest::*;
+    use frost_core::Field;
 
     #[rstest]
     #[case::ed25519(

@@ -1,5 +1,5 @@
 use crate::{Error, Scheme};
-use frost_core::{Ciphersuite, Field, Group};
+use frost_core::Ciphersuite;
 
 const MAX_SIGNATURE_SHARE_LEN: usize = 58;
 
@@ -23,7 +23,7 @@ impl<C: Ciphersuite> From<&frost_core::round2::SignatureShare<C>> for SignatureS
         let scheme = C::ID.parse().expect("Unknown ciphersuite");
         Self {
             scheme,
-            value: s.serialize().as_ref().to_vec(),
+            value: s.serialize(),
         }
     }
 }
@@ -40,12 +40,7 @@ impl<C: Ciphersuite> TryFrom<&SignatureShare> for frost_core::round2::SignatureS
                 "Ciphersuite does not match signature share".to_string(),
             ));
         }
-        let bytes =
-            <<C::Group as Group>::Field as Field>::Serialization::try_from(value.value.clone())
-                .map_err(|_| {
-                    Error::General("Error converting signature share from bytes".to_string())
-                })?;
-        frost_core::round2::SignatureShare::<C>::deserialize(bytes)
+        frost_core::round2::SignatureShare::<C>::deserialize(value.value.as_slice())
             .map_err(|_| Error::General("Error deserializing signature share".to_string()))
     }
 }

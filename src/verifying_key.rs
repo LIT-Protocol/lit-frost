@@ -1,7 +1,7 @@
 mod compatibility;
 
 use crate::{Error, Scheme};
-use frost_core::{Ciphersuite, Group};
+use frost_core::Ciphersuite;
 
 const MAX_VERIFYING_KEY_LEN: usize = 58;
 
@@ -22,7 +22,7 @@ impl<C: Ciphersuite> From<frost_core::VerifyingKey<C>> for VerifyingKey {
 
 impl<C: Ciphersuite> From<&frost_core::VerifyingKey<C>> for VerifyingKey {
     fn from(s: &frost_core::VerifyingKey<C>) -> Self {
-        let value = s.serialize().as_ref().to_vec();
+        let value = s.serialize().expect("a byte sequence");
         let scheme = C::ID.parse::<Scheme>().expect("Unknown ciphersuite");
         Self { scheme, value }
     }
@@ -40,9 +40,7 @@ impl<C: Ciphersuite> TryFrom<&VerifyingKey> for frost_core::VerifyingKey<C> {
                 "Ciphersuite does not match verifying key".to_string(),
             ));
         }
-        let bytes = <C::Group as Group>::Serialization::try_from(value.value.clone())
-            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))?;
-        frost_core::VerifyingKey::<C>::deserialize(bytes)
+        frost_core::VerifyingKey::<C>::deserialize(value.value.as_slice())
             .map_err(|_| Error::General("Error deserializing verifying key".to_string()))
     }
 }
@@ -58,8 +56,9 @@ impl VerifyingKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use frost_redjubjub::frost;
     use rstest::*;
+    use frost_core as frost;
+    use frost::Group;
 
     #[rstest]
     #[case::ed25519(frost_ed25519::Ed25519Sha512, Scheme::Ed25519Sha512)]

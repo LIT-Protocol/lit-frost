@@ -1,7 +1,7 @@
 mod compatibility;
 
 use crate::{is_zero, ByteOrder, Error, Scheme};
-use frost_core::{Ciphersuite, Field, Group};
+use frost_core::Ciphersuite;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, Display, Formatter};
 
@@ -79,35 +79,35 @@ impl<C: Ciphersuite> From<&frost_core::Identifier<C>> for Identifier {
         match C::ID.parse().expect("Unknown ciphersuite") {
             Scheme::Ed25519Sha512 => Self {
                 scheme: Scheme::Ed25519Sha512,
-                id: s.serialize().as_ref().to_vec(),
+                id: s.serialize(),
             },
             Scheme::Ed448Shake256 => Self {
                 scheme: Scheme::Ed448Shake256,
-                id: s.serialize().as_ref().to_vec(),
+                id: s.serialize(),
             },
             Scheme::Ristretto25519Sha512 => Self {
                 scheme: Scheme::Ristretto25519Sha512,
-                id: s.serialize().as_ref().to_vec(),
+                id: s.serialize(),
             },
             Scheme::K256Sha256 => Self {
                 scheme: Scheme::K256Sha256,
-                id: s.serialize().as_ref().to_vec(),
+                id: s.serialize(),
             },
             Scheme::P256Sha256 => Self {
                 scheme: Scheme::P256Sha256,
-                id: s.serialize().as_ref().to_vec(),
+                id: s.serialize(),
             },
             Scheme::P384Sha384 => Self {
                 scheme: Scheme::P384Sha384,
-                id: s.serialize().as_ref().to_vec(),
+                id: s.serialize(),
             },
             Scheme::RedJubjubBlake2b512 => Self {
                 scheme: Scheme::RedJubjubBlake2b512,
-                id: s.serialize().as_ref().to_vec(),
+                id: s.serialize(),
             },
             Scheme::K256Taproot => Self {
                 scheme: Scheme::K256Taproot,
-                id: s.serialize().as_ref().to_vec(),
+                id: s.serialize(),
             },
         }
     }
@@ -129,9 +129,7 @@ impl<C: Ciphersuite> TryFrom<&Identifier> for frost_core::Identifier<C> {
             .parse::<Scheme>()
             .map_err(|_| Error::General("Unknown ciphersuite".to_string()))?;
         if scheme == s.scheme {
-            let id = <<C::Group as Group>::Field as Field>::Serialization::try_from(s.id.clone())
-                .map_err(|_| Error::General("Invalid identifier".to_string()))?;
-            let id = frost_core::Identifier::deserialize(&id)
+            let id = frost_core::Identifier::deserialize(s.id.as_slice())
                 .map_err(|_| Error::General("Invalid identifier".to_string()))?;
             Ok(id)
         } else {

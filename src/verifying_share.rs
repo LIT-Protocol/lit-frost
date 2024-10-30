@@ -1,5 +1,5 @@
 use crate::{Error, Scheme};
-use frost_core::{Ciphersuite, Group};
+use frost_core::Ciphersuite;
 
 const MAX_VERIFYING_SHARE_LEN: usize = 58;
 
@@ -20,7 +20,7 @@ impl<C: Ciphersuite> From<frost_core::keys::VerifyingShare<C>> for VerifyingShar
 
 impl<C: Ciphersuite> From<&frost_core::keys::VerifyingShare<C>> for VerifyingShare {
     fn from(s: &frost_core::keys::VerifyingShare<C>) -> Self {
-        let value = s.serialize().as_ref().to_vec();
+        let value = s.serialize().expect("serialize to bytes");
         let scheme = C::ID.parse::<Scheme>().expect("Unknown ciphersuite");
         Self { scheme, value }
     }
@@ -38,11 +38,11 @@ impl<C: Ciphersuite> TryFrom<&VerifyingShare> for frost_core::keys::VerifyingSha
                 "Ciphersuite does not match verifying share".to_string(),
             ));
         }
-        let bytes =
-            <C::Group as Group>::Serialization::try_from(value.value.to_vec()).map_err(|_| {
-                Error::General("Error converting verifying share from bytes".to_string())
-            })?;
-        frost_core::keys::VerifyingShare::<C>::deserialize(bytes)
+        // let bytes =
+        //     <C::Group as Group>::Serialization::try_from(value.value.to_vec()).map_err(|_| {
+        //         Error::General("Error converting verifying share from bytes".to_string())
+        //     })?;
+        frost_core::keys::VerifyingShare::<C>::deserialize(value.value.as_slice())
             .map_err(|_| Error::General("Error deserializing verifying share".to_string()))
     }
 }
@@ -63,6 +63,7 @@ impl VerifyingShare {
 mod tests {
     use super::*;
     use rstest::*;
+    use frost_core::Group;
 
     #[rstest]
     #[case::ed25519(frost_ed25519::Ed25519Sha512, Scheme::Ed25519Sha512)]

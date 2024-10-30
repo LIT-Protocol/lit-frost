@@ -1,5 +1,5 @@
 use crate::{Error, Scheme};
-use frost_core::{Ciphersuite, Field, Group};
+use frost_core::Ciphersuite;
 use serde::{
     de::{SeqAccess, Visitor},
     ser::SerializeTuple,
@@ -33,8 +33,8 @@ impl<C: Ciphersuite> From<&frost_core::round1::SigningNonces<C>> for SigningNonc
         let scheme = C::ID.parse().expect("Unknown ciphersuite");
         Self {
             scheme,
-            hiding: s.hiding().serialize().as_ref().to_vec(),
-            binding: s.binding().serialize().as_ref().to_vec(),
+            hiding: s.hiding().serialize(),
+            binding: s.binding().serialize(),
         }
     }
 }
@@ -51,17 +51,17 @@ impl<C: Ciphersuite> TryFrom<&SigningNonces> for frost_core::round1::SigningNonc
                 "Ciphersuite does not match signing nonces".to_string(),
             ));
         }
-        let hiding_bytes =
-            <<C::Group as Group>::Field as Field>::Serialization::try_from(value.hiding.to_vec())
-                .map_err(|_| Error::General("Error converting hiding nonce to bytes".to_string()))?;
-        let binding_bytes =
-            <<C::Group as Group>::Field as Field>::Serialization::try_from(value.binding.to_vec())
-                .map_err(|_| {
-                    Error::General("Error converting binding nonce to bytes".to_string())
-                })?;
-        let hiding = frost_core::round1::Nonce::<C>::deserialize(hiding_bytes)
+        // let hiding_bytes =
+        //     <<C::Group as Group>::Field as Field>::Serialization::try_from(value.hiding.to_vec())
+        //         .map_err(|_| Error::General("Error converting hiding nonce to bytes".to_string()))?;
+        // let binding_bytes =
+        //     <<C::Group as Group>::Field as Field>::Serialization::try_from(value.binding.to_vec())
+        //         .map_err(|_| {
+        //             Error::General("Error converting binding nonce to bytes".to_string())
+        //         })?;
+        let hiding = frost_core::round1::Nonce::<C>::deserialize(value.hiding.as_slice())
             .map_err(|_| Error::General("Error deserializing hiding nonce".to_string()))?;
-        let binding = frost_core::round1::Nonce::<C>::deserialize(binding_bytes)
+        let binding = frost_core::round1::Nonce::<C>::deserialize(value.binding.as_slice())
             .map_err(|_| Error::General("Error deserializing binding nonce".to_string()))?;
         let signing_nonces = frost_core::round1::SigningNonces::<C>::from_nonces(hiding, binding);
         Ok(signing_nonces)
