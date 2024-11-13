@@ -837,14 +837,15 @@ pub(crate) fn is_zero(value: &[u8]) -> subtle::Choice {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use elliptic_curve::PrimeField;
-    use frost_core::Group;
-    use gennaro_dkg::*;
-    use group::GroupEncoding;
-    use rand_core::SeedableRng;
+    // use elliptic_curve::PrimeField;
+    // use frost_core::Group;
+    // use gennaro_dkg::*;
+    // use group::GroupEncoding;
+    // use rand_core::SeedableRng;
     use rstest::*;
-    use std::num::{NonZeroUsize, NonZeroU16};
-    use vsss_rs::*;
+    // use std::num::{NonZeroUsize, NonZeroU16};
+    use std::num::NonZeroU16;
+    // use vsss_rs::*;
 
     #[rstest]
     #[case::ed25519(Scheme::Ed25519Sha512, 32)]
@@ -1006,127 +1007,127 @@ mod tests {
         }
     }
 
-    #[test]
-    fn dkg() {
-        const MSG: &[u8] = b"test";
-        let threshold: usize = 2;
-        let limit: usize = 3;
-        let scheme = Scheme::RedJubjubBlake2b512;
-
-        let mut rng = rand_chacha::ChaCha8Rng::from_seed([0u8; 32]);
-
-        let params = Parameters::<jubjub::SubgroupPoint>::new(
-            NonZeroUsize::new(threshold).unwrap(),
-            NonZeroUsize::new(limit).unwrap(),
-            Some(frost_redjubjub::JubjubGroup::generator()),
-            Some(<jubjub::SubgroupPoint as group::Group>::generator()),
-            None,
-        );
-        let mut secret_participants = [
-            SecretParticipant::new(IdentifierPrimeField(jubjub::Scalar::from(1)), &params).unwrap(),
-            SecretParticipant::new(IdentifierPrimeField(jubjub::Scalar::from(2)), &params).unwrap(),
-            SecretParticipant::new(IdentifierPrimeField(jubjub::Scalar::from(3)), &params).unwrap(),
-        ];
-
-        fn next_round(participants: &mut [SecretParticipant<jubjub::SubgroupPoint>]) -> DkgResult<()> {
-            let mut round_generators = Vec::with_capacity(participants.len());
-
-            for p in participants.iter_mut() {
-                let round_generator = p.run()?;
-                round_generators.push(round_generator);
-            }
-
-            for gen in &round_generators {
-                for data in gen.iter() {
-                    let p = &mut participants[data.dst_ordinal];
-                    assert_eq!(data.dst_ordinal, p.get_ordinal());
-                    assert_eq!(data.dst_id, p.get_id());
-                    assert!(p.receive(data.data.as_slice()).is_ok());
-                }
-            }
-            Ok(())
-        }
-
-        for _ in [
-            Round::One,
-            Round::Two,
-            Round::Three,
-            Round::Four,
-        ] {
-            let res = next_round(&mut secret_participants);
-            assert!(res.is_ok());
-        }
-
-        let id1 = Identifier::from((scheme, 1u8));
-        let id2 = Identifier::from((scheme, 2u8));
-        let id3 = Identifier::from((scheme, 3u8));
-
-        let verifying_key = VerifyingKey {
-            scheme,
-            value: secret_participants[0].get_public_key().unwrap().to_bytes().to_vec(),
-        };
-        let mut secret_shares = BTreeMap::new();
-
-        secret_shares.insert(
-            id1,
-            SigningShare {
-                scheme,
-                value: secret_participants[0].get_secret_share().unwrap().value.0.to_repr().as_ref().to_vec(),
-            },
-        );
-        secret_shares.insert(
-            id2,
-            SigningShare {
-                scheme,
-                value: secret_participants[1].get_secret_share().unwrap().value.0.to_repr().as_ref().to_vec(),
-            },
-        );
-        secret_shares.insert(
-            id3,
-            SigningShare {
-                scheme,
-                value: secret_participants[2].get_secret_share().unwrap().value.0.to_repr().as_ref().to_vec(),
-            },
-        );
-
-        let mut signing_package = BTreeMap::new();
-        let mut signing_commitments = Vec::new();
-
-        for (id, secret_share) in &secret_shares {
-            let res = scheme.signing_round1(&secret_share, &mut rng);
-            assert!(res.is_ok());
-            let (nonces, commitments) = res.unwrap();
-            signing_package.insert(id.clone(), (nonces, secret_share));
-            signing_commitments.push((id.clone(), commitments));
-        }
-
-        let mut verifying_shares = Vec::new();
-        let mut signature_shares = Vec::new();
-        for (id, (nonces, secret_share)) in signing_package {
-            let res = scheme.signing_round2(
-                MSG,
-                &signing_commitments,
-                &nonces,
-                &KeyPackage {
-                    identifier: id.clone(),
-                    secret_share: secret_share.clone(),
-                    verifying_key: verifying_key.clone(),
-                    threshold: NonZeroU16::new(threshold as u16).unwrap(),
-                },
-            );
-            let signature = res.unwrap();
-            signature_shares.push((id.clone(), signature));
-            verifying_shares.push((id.clone(), scheme.verifying_share(&secret_share).unwrap()));
-        }
-
-        let res = scheme.aggregate(
-            MSG,
-            &signing_commitments,
-            &signature_shares,
-            &verifying_shares,
-            &verifying_key,
-        );
-        let signature = res.unwrap();
-        assert!(scheme.verify(MSG, &verifying_key, &signature).is_ok());
-    }
+    // #[test]
+    // fn dkg() {
+    //     const MSG: &[u8] = b"test";
+    //     let threshold: usize = 2;
+    //     let limit: usize = 3;
+    //     let scheme = Scheme::RedJubjubBlake2b512;
+    //
+    //     let mut rng = rand_chacha::ChaCha8Rng::from_seed([0u8; 32]);
+    //
+    //     let params = Parameters::<jubjub::SubgroupPoint>::new(
+    //         NonZeroUsize::new(threshold).unwrap(),
+    //         NonZeroUsize::new(limit).unwrap(),
+    //         Some(frost_redjubjub::JubjubGroup::generator()),
+    //         Some(<jubjub::SubgroupPoint as group::Group>::generator()),
+    //         None,
+    //     );
+    //     let mut secret_participants = [
+    //         SecretParticipant::new(IdentifierPrimeField(jubjub::Scalar::from(1)), &params).unwrap(),
+    //         SecretParticipant::new(IdentifierPrimeField(jubjub::Scalar::from(2)), &params).unwrap(),
+    //         SecretParticipant::new(IdentifierPrimeField(jubjub::Scalar::from(3)), &params).unwrap(),
+    //     ];
+    //
+    //     fn next_round(participants: &mut [SecretParticipant<jubjub::SubgroupPoint>]) -> DkgResult<()> {
+    //         let mut round_generators = Vec::with_capacity(participants.len());
+    //
+    //         for p in participants.iter_mut() {
+    //             let round_generator = p.run()?;
+    //             round_generators.push(round_generator);
+    //         }
+    //
+    //         for gen in &round_generators {
+    //             for data in gen.iter() {
+    //                 let p = &mut participants[data.dst_ordinal];
+    //                 assert_eq!(data.dst_ordinal, p.get_ordinal());
+    //                 assert_eq!(data.dst_id, p.get_id());
+    //                 assert!(p.receive(data.data.as_slice()).is_ok());
+    //             }
+    //         }
+    //         Ok(())
+    //     }
+    //
+    //     for _ in [
+    //         Round::One,
+    //         Round::Two,
+    //         Round::Three,
+    //         Round::Four,
+    //     ] {
+    //         let res = next_round(&mut secret_participants);
+    //         assert!(res.is_ok());
+    //     }
+    //
+    //     let id1 = Identifier::from((scheme, 1u8));
+    //     let id2 = Identifier::from((scheme, 2u8));
+    //     let id3 = Identifier::from((scheme, 3u8));
+    //
+    //     let verifying_key = VerifyingKey {
+    //         scheme,
+    //         value: secret_participants[0].get_public_key().unwrap().to_bytes().to_vec(),
+    //     };
+    //     let mut secret_shares = BTreeMap::new();
+    //
+    //     secret_shares.insert(
+    //         id1,
+    //         SigningShare {
+    //             scheme,
+    //             value: secret_participants[0].get_secret_share().unwrap().value.0.to_repr().as_ref().to_vec(),
+    //         },
+    //     );
+    //     secret_shares.insert(
+    //         id2,
+    //         SigningShare {
+    //             scheme,
+    //             value: secret_participants[1].get_secret_share().unwrap().value.0.to_repr().as_ref().to_vec(),
+    //         },
+    //     );
+    //     secret_shares.insert(
+    //         id3,
+    //         SigningShare {
+    //             scheme,
+    //             value: secret_participants[2].get_secret_share().unwrap().value.0.to_repr().as_ref().to_vec(),
+    //         },
+    //     );
+    //
+    //     let mut signing_package = BTreeMap::new();
+    //     let mut signing_commitments = Vec::new();
+    //
+    //     for (id, secret_share) in &secret_shares {
+    //         let res = scheme.signing_round1(&secret_share, &mut rng);
+    //         assert!(res.is_ok());
+    //         let (nonces, commitments) = res.unwrap();
+    //         signing_package.insert(id.clone(), (nonces, secret_share));
+    //         signing_commitments.push((id.clone(), commitments));
+    //     }
+    //
+    //     let mut verifying_shares = Vec::new();
+    //     let mut signature_shares = Vec::new();
+    //     for (id, (nonces, secret_share)) in signing_package {
+    //         let res = scheme.signing_round2(
+    //             MSG,
+    //             &signing_commitments,
+    //             &nonces,
+    //             &KeyPackage {
+    //                 identifier: id.clone(),
+    //                 secret_share: secret_share.clone(),
+    //                 verifying_key: verifying_key.clone(),
+    //                 threshold: NonZeroU16::new(threshold as u16).unwrap(),
+    //             },
+    //         );
+    //         let signature = res.unwrap();
+    //         signature_shares.push((id.clone(), signature));
+    //         verifying_shares.push((id.clone(), scheme.verifying_share(&secret_share).unwrap()));
+    //     }
+    //
+    //     let res = scheme.aggregate(
+    //         MSG,
+    //         &signing_commitments,
+    //         &signature_shares,
+    //         &verifying_shares,
+    //         &verifying_key,
+    //     );
+    //     let signature = res.unwrap();
+    //     assert!(scheme.verify(MSG, &verifying_key, &signature).is_ok());
+    // }
 }

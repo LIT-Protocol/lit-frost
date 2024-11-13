@@ -29,8 +29,8 @@ serde = "1.0"
 serde_bare = "0.5"
 sha2 = "0.10"
 subtle = "2.6"
-thiserror = "1.0"
-vsss-rs = { version = "5.0.0-rc1", features = ["curve25519"] }
+thiserror = "2.0"
+vsss-rs = { version = "4.3.8", features = ["curve25519"] }
 zeroize = "1.8"
 
 [target.'cfg(target_pointer_width = "32")'.dependencies]
