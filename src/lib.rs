@@ -1193,5 +1193,10 @@ mod tests {
         );
         let signature = res.unwrap();
         assert!(scheme.verify(MSG, &verifying_key, &signature).is_ok());
+
+        let pk: decaf377_rdsa::VerificationKey<decaf377_rdsa::SpendAuth> =
+            verifying_key.try_into().unwrap();
+        let sg: decaf377_rdsa::Signature<decaf377_rdsa::SpendAuth> = signature.try_into().unwrap();
+        assert!(pk.verify(MSG, &sg).is_ok());
     }
 }

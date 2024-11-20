@@ -795,7 +795,7 @@ impl<D: decaf377_rdsa::Domain> TryFrom<&VerifyingKey> for decaf377_rdsa::Verific
 
     fn try_from(value: &VerifyingKey) -> Result<Self, Self::Error> {
         let scheme = value.scheme;
-        if scheme != Scheme::RedJubjubBlake2b512 || value.value.len() != 32 {
+        if scheme != Scheme::RedDecaf377Blake2b512 || value.value.len() != 32 {
             return Err(Error::General(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
