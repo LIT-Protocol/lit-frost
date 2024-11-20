@@ -588,6 +588,30 @@ try_from_scheme_ref!(
         Ok(Self(pt.0))
     }
 );
+try_from_scheme_ref!(
+    VerifyingKey,
+    decaf377::Element,
+    |scheme, s: &decaf377::Element| {
+        if scheme != Scheme::RedDecaf377Blake2b512 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        use ark_serialize::CanonicalSerialize;
+
+        let mut value = Vec::with_capacity(32);
+        s.serialize_compressed(&mut value)
+            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))?;
+
+        Ok(Self { scheme, value })
+    }
+);
+try_from_scheme_ref!(decaf377::Element, VerifyingKey, |value: &VerifyingKey| {
+    use ark_serialize::CanonicalDeserialize;
+
+    decaf377::Element::deserialize_compressed(value.value.as_slice())
+        .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))
+});
 
 impl From<k256::schnorr::VerifyingKey> for VerifyingKey {
     fn from(s: k256::schnorr::VerifyingKey) -> Self {
@@ -712,6 +736,61 @@ impl<S: reddsa::SigType> TryFrom<VerifyingKey> for reddsa::VerificationKey<S> {
 }
 
 impl<S: reddsa::SigType> TryFrom<&VerifyingKey> for reddsa::VerificationKey<S> {
+    type Error = Error;
+
+    fn try_from(value: &VerifyingKey) -> Result<Self, Self::Error> {
+        let scheme = value.scheme;
+        if scheme != Scheme::RedJubjubBlake2b512 || value.value.len() != 32 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
+        Ok(bytes.try_into()?)
+    }
+}
+
+impl<D: decaf377_rdsa::Domain> TryFrom<(Scheme, decaf377_rdsa::VerificationKey<D>)>
+    for VerifyingKey
+{
+    type Error = Error;
+
+    fn try_from(
+        (scheme, s): (Scheme, decaf377_rdsa::VerificationKey<D>),
+    ) -> Result<Self, Self::Error> {
+        Self::try_from((scheme, &s))
+    }
+}
+
+impl<D: decaf377_rdsa::Domain> TryFrom<(Scheme, &decaf377_rdsa::VerificationKey<D>)>
+    for VerifyingKey
+{
+    type Error = Error;
+
+    fn try_from(
+        (scheme, s): (Scheme, &decaf377_rdsa::VerificationKey<D>),
+    ) -> Result<Self, Self::Error> {
+        if scheme != Scheme::RedDecaf377Blake2b512 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        Ok(Self {
+            scheme,
+            value: s.to_bytes().to_vec(),
+        })
+    }
+}
+
+impl<D: decaf377_rdsa::Domain> TryFrom<VerifyingKey> for decaf377_rdsa::VerificationKey<D> {
+    type Error = Error;
+
+    fn try_from(value: VerifyingKey) -> Result<Self, Self::Error> {
+        Self::try_from(&value)
+    }
+}
+
+impl<D: decaf377_rdsa::Domain> TryFrom<&VerifyingKey> for decaf377_rdsa::VerificationKey<D> {
     type Error = Error;
 
     fn try_from(value: &VerifyingKey) -> Result<Self, Self::Error> {

@@ -51,14 +51,6 @@ impl<C: Ciphersuite> TryFrom<&SigningNonces> for frost_core::round1::SigningNonc
                 "Ciphersuite does not match signing nonces".to_string(),
             ));
         }
-        // let hiding_bytes =
-        //     <<C::Group as Group>::Field as Field>::Serialization::try_from(value.hiding.to_vec())
-        //         .map_err(|_| Error::General("Error converting hiding nonce to bytes".to_string()))?;
-        // let binding_bytes =
-        //     <<C::Group as Group>::Field as Field>::Serialization::try_from(value.binding.to_vec())
-        //         .map_err(|_| {
-        //             Error::General("Error converting binding nonce to bytes".to_string())
-        //         })?;
         let hiding = frost_core::round1::Nonce::<C>::deserialize(value.hiding.as_slice())
             .map_err(|_| Error::General("Error deserializing hiding nonce".to_string()))?;
         let binding = frost_core::round1::Nonce::<C>::deserialize(value.binding.as_slice())
@@ -244,6 +236,11 @@ mod tests {
         frost_taproot::Secp256K1TaprootScalarField,
         Scheme::K256Taproot
     )]
+    #[case::decaf377(
+        frost_decaf377::Decaf377Blake2b512,
+        frost_decaf377::Decaf377ScalarField,
+        Scheme::RedDecaf377Blake2b512
+    )]
     fn convert<C: Ciphersuite, F: Field>(#[case] _c: C, #[case] _f: F, #[case] scheme: Scheme) {
         const ITER: usize = 25;
         let mut rng = rand::rngs::OsRng;
@@ -306,6 +303,11 @@ mod tests {
         frost_taproot::Secp256K1Taproot,
         frost_taproot::Secp256K1TaprootScalarField,
         Scheme::K256Taproot
+    )]
+    #[case::decaf377(
+        frost_decaf377::Decaf377Blake2b512,
+        frost_decaf377::Decaf377ScalarField,
+        Scheme::RedDecaf377Blake2b512
     )]
     fn serialize<C: Ciphersuite, F: Field>(#[case] _c: C, #[case] _f: F, #[case] scheme: Scheme) {
         const ITER: usize = 25;

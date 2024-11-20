@@ -203,3 +203,27 @@ try_from_scheme_ref!(
         Ok(Self(scalar.0))
     }
 );
+try_from_scheme_ref!(Identifier, decaf377::Fr, |scheme, id: &decaf377::Fr| {
+    match scheme {
+        Scheme::RedDecaf377Blake2b512 => {
+            let bytes = id.to_bytes_le();
+            Ok(Self {
+                scheme,
+                id: bytes.to_vec(),
+            })
+        }
+        _ => Err(Error::General("Invalid ciphersuite".to_string())),
+    }
+});
+try_from_scheme_ref!(decaf377::Fr, Identifier, |id: &Identifier| {
+    match id.scheme {
+        Scheme::RedDecaf377Blake2b512 => {
+            let bytes = (&id.id[..])
+                .try_into()
+                .map_err(|_| Error::General("Invalid identifier".to_string()))?;
+            decaf377::Fr::from_bytes_checked(&bytes)
+                .map_err(|_| Error::General("Invalid identifier".to_string()))
+        }
+        _ => Err(Error::General("Invalid ciphersuite".to_string())),
+    }
+});

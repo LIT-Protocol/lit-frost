@@ -63,6 +63,7 @@ mod verifying_key;
 mod verifying_share;
 
 pub use curve25519_dalek;
+pub use decaf377;
 pub use ed25519_dalek;
 pub use ed448_goldilocks;
 pub use jubjub;
@@ -119,6 +120,8 @@ pub enum Scheme {
     RedJubjubBlake2b512 = 7,
     /// Compute the Secp256k1 schnorr signature using the taproot hash function
     K256Taproot = 8,
+    /// Compute the RedDecaf377 schnorr signature using the Blake2b-512 hash function
+    RedDecaf377Blake2b512 = 9,
 }
 
 impl Display for Scheme {
@@ -144,6 +147,9 @@ impl FromStr for Scheme {
                 Ok(Self::RedJubjubBlake2b512)
             }
             "K256Taproot" | "FROST-secp256k1-Taproot-v1" => Ok(Self::K256Taproot),
+            "RedDecaf377Blake2b512" | "FROST-Decaf377-BLAKE2b-512-v1" => {
+                Ok(Self::RedDecaf377Blake2b512)
+            }
             _ => Err(Error::General(format!("Unknown scheme: {}", s))),
         }
     }
@@ -162,6 +168,7 @@ impl TryFrom<u8> for Scheme {
             6 => Ok(Self::P384Sha384),
             7 => Ok(Self::RedJubjubBlake2b512),
             8 => Ok(Self::K256Taproot),
+            9 => Ok(Self::RedDecaf377Blake2b512),
             _ => Err(Error::General(format!("Unknown scheme: {}", value))),
         }
     }
@@ -220,6 +227,9 @@ impl Scheme {
             Self::K256Taproot => {
                 preprocess::<frost_taproot::Secp256K1Taproot, R>(count, secret_share, rng)
             }
+            Self::RedDecaf377Blake2b512 => {
+                preprocess::<frost_decaf377::Decaf377Blake2b512, R>(count, secret_share, rng)
+            }
         }
     }
 
@@ -248,6 +258,9 @@ impl Scheme {
                 round1::<frost_redjubjub::JubjubBlake2b512, R>(secret_share, rng)
             }
             Self::K256Taproot => round1::<frost_taproot::Secp256K1Taproot, R>(secret_share, rng),
+            Self::RedDecaf377Blake2b512 => {
+                round1::<frost_decaf377::Decaf377Blake2b512, R>(secret_share, rng)
+            }
         }
     }
 
@@ -324,6 +337,12 @@ impl Scheme {
             ),
             Self::K256Taproot => round2::<frost_taproot::Secp256K1Taproot>(
                 Sha256::digest(message).as_slice(),
+                signing_commitments,
+                signing_nonce,
+                key_package,
+            ),
+            Self::RedDecaf377Blake2b512 => round2::<frost_decaf377::Decaf377Blake2b512>(
+                message,
                 signing_commitments,
                 signing_nonce,
                 key_package,
@@ -427,6 +446,13 @@ impl Scheme {
                 signer_pubkeys,
                 verifying_key,
             ),
+            Self::RedDecaf377Blake2b512 => aggregate::<frost_decaf377::Decaf377Blake2b512>(
+                message,
+                signing_commitments,
+                signature_shares,
+                signer_pubkeys,
+                verifying_key,
+            ),
         }
     }
 
@@ -472,6 +498,9 @@ impl Scheme {
                 verifying_key,
                 signature,
             ),
+            Self::RedDecaf377Blake2b512 => {
+                verify::<frost_decaf377::Decaf377Blake2b512>(message, verifying_key, signature)
+            }
         }
     }
 
@@ -496,6 +525,9 @@ impl Scheme {
                 verifying_share::<frost_redjubjub::JubjubBlake2b512>(signing_share)
             }
             Self::K256Taproot => verifying_share::<frost_taproot::Secp256K1Taproot>(signing_share),
+            Self::RedDecaf377Blake2b512 => {
+                verifying_share::<frost_decaf377::Decaf377Blake2b512>(signing_share)
+            }
         }
     }
 
@@ -509,6 +541,7 @@ impl Scheme {
             Self::P384Sha384 => Ok(48),
             Self::RedJubjubBlake2b512 => Ok(32),
             Self::K256Taproot => Ok(32),
+            Self::RedDecaf377Blake2b512 => Ok(32),
         }
     }
 
@@ -517,7 +550,8 @@ impl Scheme {
             Self::Ed25519Sha512
             | Self::Ristretto25519Sha512
             | Self::Ed448Shake256
-            | Self::RedJubjubBlake2b512 => Ok(ByteOrder::LittleEndian),
+            | Self::RedJubjubBlake2b512
+            | Self::RedDecaf377Blake2b512 => Ok(ByteOrder::LittleEndian),
             Self::P256Sha256 | Self::K256Sha256 | Self::K256Taproot | Self::P384Sha384 => {
                 Ok(ByteOrder::BigEndian)
             }
@@ -534,6 +568,7 @@ impl Scheme {
             Self::P384Sha384 => Ok(49),
             Self::RedJubjubBlake2b512 => Ok(32),
             Self::K256Taproot => Ok(33),
+            Self::RedDecaf377Blake2b512 => Ok(32),
         }
     }
 
@@ -547,6 +582,7 @@ impl Scheme {
             Self::P384Sha384 => Ok(103),
             Self::RedJubjubBlake2b512 => Ok(69),
             Self::K256Taproot => Ok(71),
+            Self::RedDecaf377Blake2b512 => Ok(69),
         }
     }
 
@@ -560,6 +596,7 @@ impl Scheme {
             Self::P384Sha384 => Ok(97),
             Self::RedJubjubBlake2b512 => Ok(64),
             Self::K256Taproot => Ok(65),
+            Self::RedDecaf377Blake2b512 => Ok(64),
         }
     }
 
@@ -613,6 +650,10 @@ impl Scheme {
                     rng,
                 )
             }
+            Self::RedDecaf377Blake2b512 => generate_with_trusted_dealer::<
+                frost_decaf377::Decaf377Blake2b512,
+                R,
+            >(min_signers, max_signers, rng),
         }
     }
 
@@ -627,6 +668,7 @@ impl Scheme {
             Self::P384Sha384 => "P384Sha384",
             Self::RedJubjubBlake2b512 => "RedJubjubBlake2b512",
             Self::K256Taproot => "K256Taproot",
+            Self::RedDecaf377Blake2b512 => "RedDecaf377Blake2b512",
         }
     }
 }
@@ -838,12 +880,10 @@ pub(crate) fn is_zero(value: &[u8]) -> subtle::Choice {
 mod tests {
     use super::*;
     use elliptic_curve::PrimeField;
-    use frost_core::Group;
     use gennaro_dkg::*;
-    use group::GroupEncoding;
     use rand_core::SeedableRng;
     use rstest::*;
-    use std::num::{NonZeroUsize, NonZeroU16};
+    use std::num::{NonZeroU16, NonZeroUsize};
     use vsss_rs::*;
 
     #[rstest]
@@ -854,7 +894,8 @@ mod tests {
     #[case::p256(Scheme::P256Sha256, 32)]
     #[case::p384(Scheme::P384Sha384, 48)]
     #[case::redjubjub(Scheme::RedJubjubBlake2b512, 32)]
-    #[case::redjubjub(Scheme::K256Taproot, 32)]
+    #[case::taproot(Scheme::K256Taproot, 32)]
+    #[case::reddecaf377(Scheme::RedDecaf377Blake2b512, 32)]
     fn pregenerate(#[case] scheme: Scheme, #[case] length: usize) {
         let mut rng = rand::rngs::OsRng;
         let mut secret = SigningShare {
@@ -880,6 +921,7 @@ mod tests {
     #[case::p384(Scheme::P384Sha384)]
     #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
     #[case::taproot(Scheme::K256Taproot)]
+    #[case::reddecaf377(Scheme::RedDecaf377Blake2b512)]
     fn rounds(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u16 = 3;
@@ -938,6 +980,7 @@ mod tests {
     #[case::p384(Scheme::P384Sha384)]
     #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
     #[case::taproot(Scheme::K256Taproot)]
+    #[case::reddecaf377(Scheme::RedDecaf377Blake2b512)]
     fn full(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u16 = 3;
@@ -1008,27 +1051,29 @@ mod tests {
 
     #[test]
     fn dkg() {
+        use ark_serialize::CanonicalSerialize;
+
         const MSG: &[u8] = b"test";
         let threshold: usize = 2;
         let limit: usize = 3;
-        let scheme = Scheme::RedJubjubBlake2b512;
+        let scheme = Scheme::RedDecaf377Blake2b512;
 
         let mut rng = rand_chacha::ChaCha8Rng::from_seed([0u8; 32]);
 
-        let params = Parameters::<jubjub::SubgroupPoint>::new(
+        let params = Parameters::<decaf377::Element>::new(
             NonZeroUsize::new(threshold).unwrap(),
             NonZeroUsize::new(limit).unwrap(),
-            Some(frost_redjubjub::JubjubGroup::generator()),
-            Some(<jubjub::SubgroupPoint as group::Group>::generator()),
+            Some(decaf377::Element::GENERATOR),
+            None,
             None,
         );
         let mut secret_participants = [
-            SecretParticipant::new(IdentifierPrimeField(jubjub::Scalar::from(1)), &params).unwrap(),
-            SecretParticipant::new(IdentifierPrimeField(jubjub::Scalar::from(2)), &params).unwrap(),
-            SecretParticipant::new(IdentifierPrimeField(jubjub::Scalar::from(3)), &params).unwrap(),
+            SecretParticipant::new(IdentifierPrimeField(decaf377::Fr::from(1u8)), &params).unwrap(),
+            SecretParticipant::new(IdentifierPrimeField(decaf377::Fr::from(2u8)), &params).unwrap(),
+            SecretParticipant::new(IdentifierPrimeField(decaf377::Fr::from(3u8)), &params).unwrap(),
         ];
 
-        fn next_round(participants: &mut [SecretParticipant<jubjub::SubgroupPoint>]) -> DkgResult<()> {
+        fn next_round(participants: &mut [SecretParticipant<decaf377::Element>]) -> DkgResult<()> {
             let mut round_generators = Vec::with_capacity(participants.len());
 
             for p in participants.iter_mut() {
@@ -1047,12 +1092,7 @@ mod tests {
             Ok(())
         }
 
-        for _ in [
-            Round::One,
-            Round::Two,
-            Round::Three,
-            Round::Four,
-        ] {
+        for _ in [Round::One, Round::Two, Round::Three, Round::Four] {
             let res = next_round(&mut secret_participants);
             assert!(res.is_ok());
         }
@@ -1061,9 +1101,13 @@ mod tests {
         let id2 = Identifier::from((scheme, 2u8));
         let id3 = Identifier::from((scheme, 3u8));
 
+        let mut bytes = [0u8; 32];
+        let pk = secret_participants[0].get_public_key().unwrap();
+        pk.serialize_compressed(&mut bytes[..]).unwrap();
+
         let verifying_key = VerifyingKey {
             scheme,
-            value: secret_participants[0].get_public_key().unwrap().to_bytes().to_vec(),
+            value: bytes.to_vec(),
         };
         let mut secret_shares = BTreeMap::new();
 
@@ -1071,21 +1115,42 @@ mod tests {
             id1,
             SigningShare {
                 scheme,
-                value: secret_participants[0].get_secret_share().unwrap().value.0.to_repr().as_ref().to_vec(),
+                value: secret_participants[0]
+                    .get_secret_share()
+                    .unwrap()
+                    .value
+                    .0
+                    .to_repr()
+                    .as_ref()
+                    .to_vec(),
             },
         );
         secret_shares.insert(
             id2,
             SigningShare {
                 scheme,
-                value: secret_participants[1].get_secret_share().unwrap().value.0.to_repr().as_ref().to_vec(),
+                value: secret_participants[1]
+                    .get_secret_share()
+                    .unwrap()
+                    .value
+                    .0
+                    .to_repr()
+                    .as_ref()
+                    .to_vec(),
             },
         );
         secret_shares.insert(
             id3,
             SigningShare {
                 scheme,
-                value: secret_participants[2].get_secret_share().unwrap().value.0.to_repr().as_ref().to_vec(),
+                value: secret_participants[2]
+                    .get_secret_share()
+                    .unwrap()
+                    .value
+                    .0
+                    .to_repr()
+                    .as_ref()
+                    .to_vec(),
             },
         );
 

@@ -109,6 +109,10 @@ impl<C: Ciphersuite> From<&frost_core::Identifier<C>> for Identifier {
                 scheme: Scheme::K256Taproot,
                 id: s.serialize(),
             },
+            Scheme::RedDecaf377Blake2b512 => Self {
+                scheme: Scheme::RedDecaf377Blake2b512,
+                id: s.serialize(),
+            },
         }
     }
 }
@@ -362,6 +366,7 @@ mod tests {
     #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
+    #[case::decaf377(frost_decaf377::Decaf377Blake2b512, Scheme::RedDecaf377Blake2b512)]
     fn convert<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {
         let id = Identifier::from((scheme, 1u8));
         let frost_id = frost_core::Identifier::<C>::try_from(&id).unwrap();
@@ -377,6 +382,7 @@ mod tests {
     #[case::p384(Scheme::P384Sha384)]
     #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
     #[case::taproot(Scheme::K256Taproot)]
+    #[case::decaf377(Scheme::RedDecaf377Blake2b512)]
     fn serialize(#[case] scheme: Scheme) {
         const ITER: usize = 25;
         let scalar_len = scheme.scalar_len().unwrap();

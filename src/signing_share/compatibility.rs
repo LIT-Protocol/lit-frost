@@ -204,3 +204,24 @@ try_from_scheme_ref!(jubjub::Scalar, SigningShare, |value: &SigningShare| {
     Option::from(jubjub::Scalar::from_bytes(&bytes))
         .ok_or(Error::General("Error converting signing share".to_string()))
 });
+try_from_scheme_ref!(SigningShare, decaf377::Fr, |scheme, s: &decaf377::Fr| {
+    if scheme != Scheme::RedDecaf377Blake2b512 {
+        return Err(Error::General(
+            "Signing share scheme does not match ciphersuite".to_string(),
+        ));
+    }
+    Ok(Self {
+        scheme,
+        value: s.to_bytes_le().to_vec(),
+    })
+});
+try_from_scheme_ref!(decaf377::Fr, SigningShare, |value: &SigningShare| {
+    if value.scheme != Scheme::RedDecaf377Blake2b512 || value.value.len() != 32 {
+        return Err(Error::General(
+            "Signing share scheme does not match ciphersuite".to_string(),
+        ));
+    }
+    let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
+    decaf377::Fr::from_bytes_checked(&bytes)
+        .map_err(|_| Error::General("Error converting signing share".to_string()))
+});

@@ -62,8 +62,8 @@ impl VerifyingShare {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rstest::*;
     use frost_core::Group;
+    use rstest::*;
 
     #[rstest]
     #[case::ed25519(frost_ed25519::Ed25519Sha512, Scheme::Ed25519Sha512)]
@@ -74,6 +74,7 @@ mod tests {
     #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
+    #[case::decaf377(frost_decaf377::Decaf377Blake2b512, Scheme::RedDecaf377Blake2b512)]
     fn convert<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {
         let value = frost_core::keys::VerifyingShare::<C>::new(C::Group::generator());
         let vk = VerifyingShare::from(&value);
@@ -93,7 +94,8 @@ mod tests {
     #[case::p256(frost_p256::P256Sha256, Scheme::P256Sha256)]
     #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
-    #[case::redjubjub(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
+    #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
+    #[case::decaf377(frost_decaf377::Decaf377Blake2b512, Scheme::RedDecaf377Blake2b512)]
     fn serialize<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {
         use frost_core::Field;
 

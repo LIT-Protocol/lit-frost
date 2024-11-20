@@ -85,6 +85,49 @@ impl<S: reddsa::SigType> TryFrom<&Signature> for reddsa::Signature<S> {
     }
 }
 
+impl<D: decaf377_rdsa::Domain> From<decaf377_rdsa::Signature<D>> for Signature {
+    fn from(s: decaf377_rdsa::Signature<D>) -> Self {
+        Self::from(&s)
+    }
+}
+
+impl<D: decaf377_rdsa::Domain> From<&decaf377_rdsa::Signature<D>> for Signature {
+    fn from(s: &decaf377_rdsa::Signature<D>) -> Self {
+        let bytes: [u8; 64] = s.to_bytes();
+        Self {
+            scheme: Scheme::RedDecaf377Blake2b512,
+            value: bytes.to_vec(),
+        }
+    }
+}
+
+impl<D: decaf377_rdsa::Domain> TryFrom<Signature> for decaf377_rdsa::Signature<D> {
+    type Error = Error;
+
+    fn try_from(value: Signature) -> Result<Self, Self::Error> {
+        Self::try_from(&value)
+    }
+}
+
+impl<D: decaf377_rdsa::Domain> TryFrom<&Signature> for decaf377_rdsa::Signature<D> {
+    type Error = Error;
+
+    fn try_from(value: &Signature) -> Result<Self, Self::Error> {
+        let scheme = Scheme::RedDecaf377Blake2b512;
+        if scheme != value.scheme {
+            return Err(Error::General(
+                "Ciphersuite does not match signature".to_string(),
+            ));
+        }
+        let bytes: [u8; 64] = value
+            .value
+            .as_slice()
+            .try_into()
+            .map_err(|_| Error::General("Error converting signature from bytes".to_string()))?;
+        Ok(Self::from(bytes))
+    }
+}
+
 impl From<k256::schnorr::Signature> for Signature {
     fn from(s: k256::schnorr::Signature) -> Self {
         Self::from(&s)

@@ -56,9 +56,9 @@ impl VerifyingKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rstest::*;
-    use frost_core as frost;
     use frost::Group;
+    use frost_core as frost;
+    use rstest::*;
 
     #[rstest]
     #[case::ed25519(frost_ed25519::Ed25519Sha512, Scheme::Ed25519Sha512)]
@@ -69,6 +69,7 @@ mod tests {
     #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
+    #[case::decaf377(frost_decaf377::Decaf377Blake2b512, Scheme::RedDecaf377Blake2b512)]
     fn convert_1<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {
         let value = frost_core::VerifyingKey::<C>::new(C::Group::generator());
         let vk = VerifyingKey::from(&value);
@@ -275,6 +276,7 @@ mod tests {
     #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
+    #[case::decaf377(frost_decaf377::Decaf377Blake2b512, Scheme::RedDecaf377Blake2b512)]
     fn serialize<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {
         use frost_core::Field;
 
