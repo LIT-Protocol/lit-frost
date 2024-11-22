@@ -460,13 +460,20 @@ impl Scheme {
                 signer_pubkeys,
                 verifying_key,
             ),
-            Self::K256Taproot => aggregate::<frost_taproot::Secp256K1Taproot>(
-                Sha256::digest(message).as_slice(),
-                signing_commitments,
-                signature_shares,
-                signer_pubkeys,
-                verifying_key,
-            ),
+            Self::K256Taproot => {
+                let signature = aggregate::<frost_taproot::Secp256K1Taproot>(
+                    Sha256::digest(message).as_slice(),
+                    signing_commitments,
+                    signature_shares,
+                    signer_pubkeys,
+                    verifying_key,
+                )?;
+                // The Taproot signature requires only 64 bytes
+                // which is correctly handled here for dropping the correct bytes
+                let sig: k256::schnorr::Signature = signature.try_into()?;
+                // Now convert it back in the correct form
+                Ok(sig.into())
+            }
             Self::RedDecaf377Blake2b512 => aggregate::<frost_decaf377::Decaf377Blake2b512>(
                 message,
                 signing_commitments,
@@ -474,13 +481,21 @@ impl Scheme {
                 signer_pubkeys,
                 verifying_key,
             ),
-            Self::SchnorrkelSubstrate => aggregate::<frost_schnorrkel25519::Schnorrkel25519Merlin>(
-                message,
-                signing_commitments,
-                signature_shares,
-                signer_pubkeys,
-                verifying_key,
-            ),
+            Self::SchnorrkelSubstrate => {
+                let signature = aggregate::<frost_schnorrkel25519::Schnorrkel25519Merlin>(
+                    message,
+                    signing_commitments,
+                    signature_shares,
+                    signer_pubkeys,
+                    verifying_key,
+                )?;
+                // The Schnorrkel signature requires some bits set
+                // to indicate the signature is a Schnorrkel signature
+                // Handle that here since the default frost signature does not.
+                let sig: schnorrkel::Signature = signature.try_into()?;
+                // Now convert it back with the correct bits set
+                Ok(sig.into())
+            }
         }
     }
 
