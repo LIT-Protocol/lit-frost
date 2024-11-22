@@ -56,7 +56,7 @@ try_from_scheme_ref!(
     VerifyingKey,
     curve25519_dalek::ristretto::CompressedRistretto,
     |scheme, s: &curve25519_dalek::ristretto::CompressedRistretto| {
-        if scheme != Scheme::Ristretto25519Sha512 {
+        if scheme != Scheme::Ristretto25519Sha512 && scheme != Scheme::SchnorrkelSubstrate {
             return Err(Error::General(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
@@ -71,7 +71,10 @@ try_from_scheme_ref!(
     curve25519_dalek::ristretto::CompressedRistretto,
     VerifyingKey,
     |value: &VerifyingKey| {
-        if value.scheme != Scheme::Ristretto25519Sha512 || value.value.len() != 32 {
+        if (value.scheme != Scheme::Ristretto25519Sha512
+            && value.scheme != Scheme::SchnorrkelSubstrate)
+            || value.value.len() != 32
+        {
             return Err(Error::General(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
@@ -84,7 +87,7 @@ try_from_scheme_ref!(
     VerifyingKey,
     curve25519_dalek::ristretto::RistrettoPoint,
     |scheme, s: &curve25519_dalek::ristretto::RistrettoPoint| {
-        if scheme != Scheme::Ristretto25519Sha512 {
+        if scheme != Scheme::Ristretto25519Sha512 && scheme != Scheme::SchnorrkelSubstrate {
             return Err(Error::General(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
@@ -161,7 +164,7 @@ try_from_scheme_ref!(
     VerifyingKey,
     vsss_rs::curve25519_dalek::ristretto::CompressedRistretto,
     |scheme, s: &vsss_rs::curve25519_dalek::ristretto::CompressedRistretto| {
-        if scheme != Scheme::Ristretto25519Sha512 {
+        if scheme != Scheme::Ristretto25519Sha512 && scheme != Scheme::SchnorrkelSubstrate {
             return Err(Error::General(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
@@ -176,7 +179,10 @@ try_from_scheme_ref!(
     vsss_rs::curve25519_dalek::ristretto::CompressedRistretto,
     VerifyingKey,
     |value: &VerifyingKey| {
-        if value.scheme != Scheme::Ristretto25519Sha512 || value.value.len() != 32 {
+        if (value.scheme != Scheme::Ristretto25519Sha512
+            && value.scheme != Scheme::SchnorrkelSubstrate)
+            || value.value.len() != 32
+        {
             return Err(Error::General(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
@@ -189,7 +195,7 @@ try_from_scheme_ref!(
     VerifyingKey,
     vsss_rs::curve25519_dalek::ristretto::RistrettoPoint,
     |scheme, s: &vsss_rs::curve25519_dalek::ristretto::RistrettoPoint| {
-        if scheme != Scheme::Ristretto25519Sha512 {
+        if scheme != Scheme::Ristretto25519Sha512 && scheme != Scheme::SchnorrkelSubstrate {
             return Err(Error::General(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
@@ -802,5 +808,52 @@ impl<D: decaf377_rdsa::Domain> TryFrom<&VerifyingKey> for decaf377_rdsa::Verific
         }
         let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
         Ok(bytes.try_into()?)
+    }
+}
+
+impl TryFrom<(Scheme, schnorrkel::PublicKey)> for VerifyingKey {
+    type Error = Error;
+
+    fn try_from((scheme, s): (Scheme, schnorrkel::PublicKey)) -> Result<Self, Self::Error> {
+        Self::try_from((scheme, &s))
+    }
+}
+
+impl TryFrom<(Scheme, &schnorrkel::PublicKey)> for VerifyingKey {
+    type Error = Error;
+
+    fn try_from((scheme, s): (Scheme, &schnorrkel::PublicKey)) -> Result<Self, Self::Error> {
+        if scheme != Scheme::SchnorrkelSubstrate {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        Ok(Self {
+            scheme,
+            value: s.to_bytes().to_vec(),
+        })
+    }
+}
+
+impl TryFrom<VerifyingKey> for schnorrkel::PublicKey {
+    type Error = Error;
+
+    fn try_from(value: VerifyingKey) -> Result<Self, Self::Error> {
+        Self::try_from(&value)
+    }
+}
+
+impl TryFrom<&VerifyingKey> for schnorrkel::PublicKey {
+    type Error = Error;
+
+    fn try_from(value: &VerifyingKey) -> Result<Self, Self::Error> {
+        let scheme = value.scheme;
+        if scheme != Scheme::SchnorrkelSubstrate || value.value.len() != 32 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        schnorrkel::PublicKey::from_bytes(&value.value)
+            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))
     }
 }

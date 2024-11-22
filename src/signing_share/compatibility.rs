@@ -75,7 +75,10 @@ try_from_scheme_ref!(
     SigningShare,
     curve25519_dalek::Scalar,
     |scheme, s: &curve25519_dalek::Scalar| {
-        if scheme != Scheme::Ed25519Sha512 && scheme != Scheme::Ristretto25519Sha512 {
+        if scheme != Scheme::Ed25519Sha512
+            && scheme != Scheme::Ristretto25519Sha512
+            && scheme != Scheme::SchnorrkelSubstrate
+        {
             return Err(Error::General(
                 "Signing share scheme does not match ciphersuite".to_string(),
             ));
@@ -90,7 +93,9 @@ try_from_scheme_ref!(
     curve25519_dalek::Scalar,
     SigningShare,
     |value: &SigningShare| {
-        if (value.scheme != Scheme::Ed25519Sha512 && value.scheme != Scheme::Ristretto25519Sha512)
+        if (value.scheme != Scheme::Ed25519Sha512
+            && value.scheme != Scheme::Ristretto25519Sha512
+            && value.scheme != Scheme::SchnorrkelSubstrate)
             || value.value.len() != 32
         {
             return Err(Error::General(
@@ -136,7 +141,10 @@ try_from_scheme_ref!(
     SigningShare,
     vsss_rs::curve25519_dalek::Scalar,
     |scheme, s: &vsss_rs::curve25519_dalek::Scalar| {
-        if scheme != Scheme::Ed25519Sha512 && scheme != Scheme::Ristretto25519Sha512 {
+        if scheme != Scheme::Ed25519Sha512
+            && scheme != Scheme::Ristretto25519Sha512
+            && scheme != Scheme::SchnorrkelSubstrate
+        {
             return Err(Error::General(
                 "Signing share scheme does not match ciphersuite".to_string(),
             ));
@@ -151,7 +159,9 @@ try_from_scheme_ref!(
     vsss_rs::curve25519_dalek::Scalar,
     SigningShare,
     |value: &SigningShare| {
-        if (value.scheme != Scheme::Ed25519Sha512 && value.scheme != Scheme::Ristretto25519Sha512)
+        if (value.scheme != Scheme::Ed25519Sha512
+            && value.scheme != Scheme::Ristretto25519Sha512
+            && value.scheme != Scheme::SchnorrkelSubstrate)
             || value.value.len() != 32
         {
             return Err(Error::General(

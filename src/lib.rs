@@ -70,6 +70,7 @@ pub use jubjub;
 pub use k256;
 pub use p256;
 pub use p384;
+pub use schnorrkel;
 pub use vsss_rs;
 
 pub use error::*;
@@ -122,6 +123,9 @@ pub enum Scheme {
     K256Taproot = 8,
     /// Compute the RedDecaf377 schnorr signature using the Blake2b-512 hash function
     RedDecaf377Blake2b512 = 9,
+    /// Compute the Schnorrkel signature using the Merlin-Strobe128 hash function
+    /// for the Polkadot substrate chain
+    SchnorrkelSubstrate = 10,
 }
 
 impl Display for Scheme {
@@ -150,6 +154,9 @@ impl FromStr for Scheme {
             "RedDecaf377Blake2b512" | "FROST-Decaf377-BLAKE2b-512-v1" => {
                 Ok(Self::RedDecaf377Blake2b512)
             }
+            "SchnorrkelSubstrate" | "FROST-Schnorrkel-Merlin-Strobe128-v1" => {
+                Ok(Self::SchnorrkelSubstrate)
+            }
             _ => Err(Error::General(format!("Unknown scheme: {}", s))),
         }
     }
@@ -169,6 +176,7 @@ impl TryFrom<u8> for Scheme {
             7 => Ok(Self::RedJubjubBlake2b512),
             8 => Ok(Self::K256Taproot),
             9 => Ok(Self::RedDecaf377Blake2b512),
+            10 => Ok(Self::SchnorrkelSubstrate),
             _ => Err(Error::General(format!("Unknown scheme: {}", value))),
         }
     }
@@ -230,6 +238,10 @@ impl Scheme {
             Self::RedDecaf377Blake2b512 => {
                 preprocess::<frost_decaf377::Decaf377Blake2b512, R>(count, secret_share, rng)
             }
+            Self::SchnorrkelSubstrate => preprocess::<
+                frost_schnorrkel25519::Schnorrkel25519Merlin,
+                R,
+            >(count, secret_share, rng),
         }
     }
 
@@ -260,6 +272,9 @@ impl Scheme {
             Self::K256Taproot => round1::<frost_taproot::Secp256K1Taproot, R>(secret_share, rng),
             Self::RedDecaf377Blake2b512 => {
                 round1::<frost_decaf377::Decaf377Blake2b512, R>(secret_share, rng)
+            }
+            Self::SchnorrkelSubstrate => {
+                round1::<frost_schnorrkel25519::Schnorrkel25519Merlin, R>(secret_share, rng)
             }
         }
     }
@@ -342,6 +357,12 @@ impl Scheme {
                 key_package,
             ),
             Self::RedDecaf377Blake2b512 => round2::<frost_decaf377::Decaf377Blake2b512>(
+                message,
+                signing_commitments,
+                signing_nonce,
+                key_package,
+            ),
+            Self::SchnorrkelSubstrate => round2::<frost_schnorrkel25519::Schnorrkel25519Merlin>(
                 message,
                 signing_commitments,
                 signing_nonce,
@@ -453,6 +474,13 @@ impl Scheme {
                 signer_pubkeys,
                 verifying_key,
             ),
+            Self::SchnorrkelSubstrate => aggregate::<frost_schnorrkel25519::Schnorrkel25519Merlin>(
+                message,
+                signing_commitments,
+                signature_shares,
+                signer_pubkeys,
+                verifying_key,
+            ),
         }
     }
 
@@ -501,6 +529,11 @@ impl Scheme {
             Self::RedDecaf377Blake2b512 => {
                 verify::<frost_decaf377::Decaf377Blake2b512>(message, verifying_key, signature)
             }
+            Self::SchnorrkelSubstrate => verify::<frost_schnorrkel25519::Schnorrkel25519Merlin>(
+                message,
+                verifying_key,
+                signature,
+            ),
         }
     }
 
@@ -528,6 +561,9 @@ impl Scheme {
             Self::RedDecaf377Blake2b512 => {
                 verifying_share::<frost_decaf377::Decaf377Blake2b512>(signing_share)
             }
+            Self::SchnorrkelSubstrate => {
+                verifying_share::<frost_schnorrkel25519::Schnorrkel25519Merlin>(signing_share)
+            }
         }
     }
 
@@ -542,6 +578,7 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => Ok(32),
             Self::K256Taproot => Ok(32),
             Self::RedDecaf377Blake2b512 => Ok(32),
+            Self::SchnorrkelSubstrate => Ok(32),
         }
     }
 
@@ -551,7 +588,8 @@ impl Scheme {
             | Self::Ristretto25519Sha512
             | Self::Ed448Shake256
             | Self::RedJubjubBlake2b512
-            | Self::RedDecaf377Blake2b512 => Ok(ByteOrder::LittleEndian),
+            | Self::RedDecaf377Blake2b512
+            | Self::SchnorrkelSubstrate => Ok(ByteOrder::LittleEndian),
             Self::P256Sha256 | Self::K256Sha256 | Self::K256Taproot | Self::P384Sha384 => {
                 Ok(ByteOrder::BigEndian)
             }
@@ -569,6 +607,7 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => Ok(32),
             Self::K256Taproot => Ok(33),
             Self::RedDecaf377Blake2b512 => Ok(32),
+            Self::SchnorrkelSubstrate => Ok(32),
         }
     }
 
@@ -583,6 +622,7 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => Ok(69),
             Self::K256Taproot => Ok(71),
             Self::RedDecaf377Blake2b512 => Ok(69),
+            Self::SchnorrkelSubstrate => Ok(69),
         }
     }
 
@@ -597,6 +637,7 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => Ok(64),
             Self::K256Taproot => Ok(65),
             Self::RedDecaf377Blake2b512 => Ok(64),
+            Self::SchnorrkelSubstrate => Ok(64),
         }
     }
 
@@ -654,6 +695,10 @@ impl Scheme {
                 frost_decaf377::Decaf377Blake2b512,
                 R,
             >(min_signers, max_signers, rng),
+            Self::SchnorrkelSubstrate => generate_with_trusted_dealer::<
+                frost_schnorrkel25519::Schnorrkel25519Merlin,
+                R,
+            >(min_signers, max_signers, rng),
         }
     }
 
@@ -669,6 +714,7 @@ impl Scheme {
             Self::RedJubjubBlake2b512 => "RedJubjubBlake2b512",
             Self::K256Taproot => "K256Taproot",
             Self::RedDecaf377Blake2b512 => "RedDecaf377Blake2b512",
+            Self::SchnorrkelSubstrate => "SchnorrkelSubstrate",
         }
     }
 }
@@ -880,11 +926,16 @@ pub(crate) fn is_zero(value: &[u8]) -> subtle::Choice {
 mod tests {
     use super::*;
     use elliptic_curve::PrimeField;
+    use frost_core::Group as _;
+    use gennaro_dkg::elliptic_curve_tools::SumOfProducts;
     use gennaro_dkg::*;
+    use group::{Group, GroupEncoding};
     use rand_core::SeedableRng;
     use rstest::*;
     use std::num::{NonZeroU16, NonZeroUsize};
-    use vsss_rs::*;
+    use vsss_rs::IdentifierPrimeField;
+
+    const DKG_MSG: &[u8] = b"test";
 
     #[rstest]
     #[case::ed25519(Scheme::Ed25519Sha512, 32)]
@@ -896,6 +947,7 @@ mod tests {
     #[case::redjubjub(Scheme::RedJubjubBlake2b512, 32)]
     #[case::taproot(Scheme::K256Taproot, 32)]
     #[case::reddecaf377(Scheme::RedDecaf377Blake2b512, 32)]
+    #[case::schnorrkel(Scheme::SchnorrkelSubstrate, 32)]
     fn pregenerate(#[case] scheme: Scheme, #[case] length: usize) {
         let mut rng = rand::rngs::OsRng;
         let mut secret = SigningShare {
@@ -922,6 +974,7 @@ mod tests {
     #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
     #[case::taproot(Scheme::K256Taproot)]
     #[case::reddecaf377(Scheme::RedDecaf377Blake2b512)]
+    #[case::schnorrkel(Scheme::SchnorrkelSubstrate)]
     fn rounds(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u16 = 3;
@@ -981,6 +1034,7 @@ mod tests {
     #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
     #[case::taproot(Scheme::K256Taproot)]
     #[case::reddecaf377(Scheme::RedDecaf377Blake2b512)]
+    #[case::schnorrkel(Scheme::SchnorrkelSubstrate)]
     fn full(#[case] scheme: Scheme) {
         const MSG: &[u8] = b"test";
         const THRESHOLD: u16 = 3;
@@ -1049,31 +1103,36 @@ mod tests {
         }
     }
 
-    #[test]
-    fn dkg() {
-        use ark_serialize::CanonicalSerialize;
-
-        const MSG: &[u8] = b"test";
+    fn dkg_core<G>(
+        scheme: Scheme,
+        generator: Option<G>,
+        blinder_generator: Option<G>,
+    ) -> (VerifyingKey, Signature)
+    where
+        G: GroupHasher + GroupEncoding + Group + SumOfProducts + Default,
+    {
         let threshold: usize = 2;
         let limit: usize = 3;
-        let scheme = Scheme::RedDecaf377Blake2b512;
 
         let mut rng = rand_chacha::ChaCha8Rng::from_seed([0u8; 32]);
 
-        let params = Parameters::<decaf377::Element>::new(
+        let params = Parameters::<G>::new(
             NonZeroUsize::new(threshold).unwrap(),
             NonZeroUsize::new(limit).unwrap(),
-            Some(decaf377::Element::GENERATOR),
-            None,
+            generator,
+            blinder_generator,
             None,
         );
         let mut secret_participants = [
-            SecretParticipant::new(IdentifierPrimeField(decaf377::Fr::from(1u8)), &params).unwrap(),
-            SecretParticipant::new(IdentifierPrimeField(decaf377::Fr::from(2u8)), &params).unwrap(),
-            SecretParticipant::new(IdentifierPrimeField(decaf377::Fr::from(3u8)), &params).unwrap(),
+            SecretParticipant::new(IdentifierPrimeField(G::Scalar::from(1u64)), &params).unwrap(),
+            SecretParticipant::new(IdentifierPrimeField(G::Scalar::from(2u64)), &params).unwrap(),
+            SecretParticipant::new(IdentifierPrimeField(G::Scalar::from(3u64)), &params).unwrap(),
         ];
 
-        fn next_round(participants: &mut [SecretParticipant<decaf377::Element>]) -> DkgResult<()> {
+        fn next_round<G>(participants: &mut [SecretParticipant<G>]) -> DkgResult<()>
+        where
+            G: GroupHasher + GroupEncoding + Group + SumOfProducts + Default,
+        {
             let mut round_generators = Vec::with_capacity(participants.len());
 
             for p in participants.iter_mut() {
@@ -1101,13 +1160,11 @@ mod tests {
         let id2 = Identifier::from((scheme, 2u8));
         let id3 = Identifier::from((scheme, 3u8));
 
-        let mut bytes = [0u8; 32];
         let pk = secret_participants[0].get_public_key().unwrap();
-        pk.serialize_compressed(&mut bytes[..]).unwrap();
 
         let verifying_key = VerifyingKey {
             scheme,
-            value: bytes.to_vec(),
+            value: pk.to_bytes().as_ref().to_vec(),
         };
         let mut secret_shares = BTreeMap::new();
 
@@ -1169,7 +1226,7 @@ mod tests {
         let mut signature_shares = Vec::new();
         for (id, (nonces, secret_share)) in signing_package {
             let res = scheme.signing_round2(
-                MSG,
+                DKG_MSG,
                 &signing_commitments,
                 &nonces,
                 &KeyPackage {
@@ -1185,18 +1242,65 @@ mod tests {
         }
 
         let res = scheme.aggregate(
-            MSG,
+            DKG_MSG,
             &signing_commitments,
             &signature_shares,
             &verifying_shares,
             &verifying_key,
         );
         let signature = res.unwrap();
-        assert!(scheme.verify(MSG, &verifying_key, &signature).is_ok());
+        assert!(scheme.verify(DKG_MSG, &verifying_key, &signature).is_ok());
+        (verifying_key, signature)
+    }
+
+    #[test]
+    fn dkg_k256_taproot() {
+        let (verifying_key, signature) =
+            dkg_core::<k256::ProjectivePoint>(Scheme::K256Taproot, None, None);
+
+        let verifying_key: k256::schnorr::VerifyingKey = verifying_key.try_into().unwrap();
+        let signature: k256::schnorr::Signature = signature.try_into().unwrap();
+        let msg = Sha256::digest(DKG_MSG);
+        assert!(verifying_key.verify_raw(&msg, &signature).is_ok());
+    }
+
+    #[test]
+    fn dkg_jubjub() {
+        let (verifying_key, signature) = dkg_core::<jubjub::SubgroupPoint>(
+            Scheme::RedJubjubBlake2b512,
+            Some(frost_redjubjub::JubjubGroup::generator()),
+            Some(<jubjub::SubgroupPoint as Group>::generator()),
+        );
+
+        // Orchard uses the pasta curves not jubjub
+        let verifying_key: reddsa::VerificationKey<reddsa::sapling::SpendAuth> =
+            verifying_key.try_into().unwrap();
+        let signature: reddsa::Signature<reddsa::sapling::SpendAuth> =
+            signature.try_into().unwrap();
+        assert!(verifying_key.verify(DKG_MSG, &signature).is_ok());
+    }
+
+    #[test]
+    fn dkg_decaf377() {
+        let (verifying_key, signature) =
+            dkg_core::<decaf377::Element>(Scheme::RedDecaf377Blake2b512, None, None);
 
         let pk: decaf377_rdsa::VerificationKey<decaf377_rdsa::SpendAuth> =
             verifying_key.try_into().unwrap();
         let sg: decaf377_rdsa::Signature<decaf377_rdsa::SpendAuth> = signature.try_into().unwrap();
-        assert!(pk.verify(MSG, &sg).is_ok());
+        assert!(pk.verify(DKG_MSG, &sg).is_ok());
+    }
+
+    #[test]
+    fn dkg_schnorrkel() {
+        let (verifying_key, signature) = dkg_core::<vsss_rs::curve25519::WrappedRistretto>(
+            Scheme::SchnorrkelSubstrate,
+            None,
+            None,
+        );
+
+        let pk: schnorrkel::PublicKey = verifying_key.try_into().unwrap();
+        let sg: schnorrkel::Signature = signature.try_into().unwrap();
+        assert!(pk.verify_simple(b"substrate", DKG_MSG, &sg).is_ok());
     }
 }

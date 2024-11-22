@@ -171,6 +171,47 @@ impl TryFrom<&Signature> for k256::schnorr::Signature {
     }
 }
 
+impl From<schnorrkel::Signature> for Signature {
+    fn from(s: schnorrkel::Signature) -> Self {
+        Self::from(&s)
+    }
+}
+
+impl From<&schnorrkel::Signature> for Signature {
+    fn from(s: &schnorrkel::Signature) -> Self {
+        Self {
+            scheme: Scheme::SchnorrkelSubstrate,
+            value: s.to_bytes().to_vec(),
+        }
+    }
+}
+
+impl TryFrom<Signature> for schnorrkel::Signature {
+    type Error = Error;
+
+    fn try_from(value: Signature) -> Result<Self, Self::Error> {
+        Self::try_from(&value)
+    }
+}
+
+impl TryFrom<&Signature> for schnorrkel::Signature {
+    type Error = Error;
+
+    fn try_from(value: &Signature) -> Result<Self, Self::Error> {
+        let scheme = Scheme::SchnorrkelSubstrate;
+        if scheme != value.scheme {
+            return Err(Error::General(
+                "Ciphersuite does not match signature".to_string(),
+            ));
+        }
+        // schnorrkel require the last byte be marked
+        let mut bytes = value.value.clone();
+        bytes[value.value.len() - 1] |= 128;
+        schnorrkel::Signature::from_bytes(&bytes)
+            .map_err(|_| Error::General("Error converting signature from bytes".to_string()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::*;

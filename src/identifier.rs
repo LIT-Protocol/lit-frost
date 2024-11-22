@@ -113,6 +113,10 @@ impl<C: Ciphersuite> From<&frost_core::Identifier<C>> for Identifier {
                 scheme: Scheme::RedDecaf377Blake2b512,
                 id: s.serialize(),
             },
+            Scheme::SchnorrkelSubstrate => Self {
+                scheme: Scheme::SchnorrkelSubstrate,
+                id: s.serialize(),
+            },
         }
     }
 }

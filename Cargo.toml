@@ -18,9 +18,9 @@ frost-ed448 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.
 frost-p256 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
 frost-p384 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
 frost-redjubjub = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
-frost-rerandomized = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
 frost-ristretto255 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
 frost-secp256k1 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
+frost-schnorrkel25519 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
 frost-taproot = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
 hex = "0.4"
 jubjub = { package="jubjub-plus" , version = "0.10" }
@@ -29,6 +29,7 @@ p256 = { version = "0.13", features = ["arithmetic"] }
 p384 = { version = "0.13", features = ["arithmetic"] }
 rand_core = "0.6"
 reddsa = "0.5"
+schnorrkel = "0.11"
 serde = "1.0"
 serde_bare = "0.5"
 sha2 = "0.10"
@@ -44,8 +45,6 @@ getrandom = { version = "0.2.14", features = ["js"] }
 group = "0.13"
 ff = "0.13"
 gennaro-dkg = "1.0.0-rc1"
-lazy_static = "1.2"
-maplit = "1.0"
 serde_json = "1.0"
 rand = "0.8"
 rand_chacha = "0.3.1"

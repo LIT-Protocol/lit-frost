@@ -72,7 +72,7 @@ try_from_scheme_ref!(
     curve25519_dalek::Scalar,
     |scheme, id: &curve25519_dalek::Scalar| {
         match scheme {
-            Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 => {
+            Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 | Scheme::SchnorrkelSubstrate => {
                 let bytes = id.to_bytes();
                 Ok(Self {
                     scheme,
@@ -85,7 +85,7 @@ try_from_scheme_ref!(
 );
 try_from_scheme_ref!(curve25519_dalek::Scalar, Identifier, |id: &Identifier| {
     match id.scheme {
-        Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 => {
+        Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 | Scheme::SchnorrkelSubstrate => {
             let bytes = id
                 .id
                 .clone()
@@ -159,7 +159,7 @@ try_from_scheme_ref!(
     vsss_rs::curve25519_dalek::Scalar,
     |scheme, id: &vsss_rs::curve25519_dalek::Scalar| {
         match scheme {
-            Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 => {
+            Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 | Scheme::SchnorrkelSubstrate => {
                 let bytes = id.to_bytes();
                 Ok(Self {
                     scheme,
@@ -175,7 +175,7 @@ try_from_scheme_ref!(
     Identifier,
     |id: &Identifier| {
         match id.scheme {
-            Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 => {
+            Scheme::Ed25519Sha512 | Scheme::Ristretto25519Sha512 | Scheme::SchnorrkelSubstrate => {
                 let bytes = id
                     .id
                     .clone()
