@@ -1,3 +1,4 @@
+use crate::Identifier;
 use thiserror::Error as TError;
 
 /// Errors generated from this library
@@ -9,6 +10,9 @@ pub enum Error {
     /// General errors
     #[error("Error: {0}")]
     General(String),
+    /// Cheaters found during an aggregate operation
+    #[error("Cheaters found: {0:?}")]
+    Cheaters(Vec<Identifier>),
 }
 
 impl From<vsss_rs::Error> for Error {

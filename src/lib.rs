@@ -810,15 +810,23 @@ fn aggregate<C: Ciphersuite>(
         return Err(Error::General("Error aggregating signature".to_string()));
     }
 
-    let res = frost_core::aggregate::<C>(&signing_package, &signature_shares_map, &pubkey_package);
+    let mut cheaters = Vec::new();
+    let res = frost_core::aggregate_report_all_cheaters::<C>(
+        &signing_package,
+        &signature_shares_map,
+        &pubkey_package,
+        &mut cheaters,
+    );
     let signature = match res {
         Ok(s) => s,
-        Err(e) => {
-            return Err(Error::General(format!(
-                "Error aggregating signature: {}",
-                e
-            )))
-        }
+        Err(e) => match e {
+            frost_core::Error::InvalidSignatureShare { culprit: _ } => {
+                return Err(Error::Cheaters(
+                    cheaters.into_iter().map(|i| i.into()).collect(),
+                ));
+            }
+            ee => return Err(ee.into()),
+        },
     };
     Ok(signature.into())
 }
@@ -940,17 +948,75 @@ pub(crate) fn is_zero(value: &[u8]) -> subtle::Choice {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use elliptic_curve::PrimeField;
     use frost_core::Group as _;
-    use gennaro_dkg::elliptic_curve_tools::SumOfProducts;
-    use gennaro_dkg::*;
+    use frost_dkg::elliptic_curve_tools::SumOfProducts;
+    use frost_dkg::{DkgResult, Parameters, Round, ScalarHash, SecretParticipant};
     use group::{Group, GroupEncoding};
     use rand_core::SeedableRng;
     use rstest::*;
     use std::num::{NonZeroU16, NonZeroUsize};
+    use vsss_rs::elliptic_curve::PrimeField;
     use vsss_rs::IdentifierPrimeField;
+    use zeroize::Zeroize;
 
     const DKG_MSG: &[u8] = b"test";
+
+    #[test]
+    fn sign_with_cheaters() {
+        const THRESHOLD: u16 = 3;
+        let scheme = Scheme::Ed25519Sha512;
+        let mut rng = rand::rngs::OsRng;
+        let (secret_shares, verifying_key) = scheme
+            .generate_with_trusted_dealer(THRESHOLD, 5, &mut rng)
+            .unwrap();
+        let mut signing_package = BTreeMap::new();
+        let mut signing_commitments = Vec::new();
+
+        for (id, secret_share) in &secret_shares {
+            let res = scheme.signing_round1(secret_share, &mut rng);
+            assert!(res.is_ok());
+            let (nonces, commitments) = res.unwrap();
+            signing_package.insert(id.clone(), (nonces, secret_share));
+            signing_commitments.push((id.clone(), commitments));
+        }
+
+        let mut verifying_shares = Vec::new();
+        let mut signature_shares = Vec::new();
+        for (i, (id, (nonces, secret_share))) in signing_package.iter().enumerate() {
+            let res = scheme.signing_round2(
+                DKG_MSG,
+                &signing_commitments,
+                &nonces,
+                &KeyPackage {
+                    identifier: id.clone(),
+                    secret_share: (*secret_share).clone(),
+                    verifying_key: verifying_key.clone(),
+                    threshold: NonZeroU16::new(THRESHOLD).unwrap(),
+                },
+            );
+            let mut signature = res.unwrap();
+            if i & 1 == 1 {
+                signature.value.iter_mut().for_each(|b| *b = 1);
+            }
+            signature_shares.push((id.clone(), signature));
+            verifying_shares.push((id.clone(), scheme.verifying_share(&secret_share).unwrap()));
+        }
+
+        let res = scheme.aggregate(
+            DKG_MSG,
+            &signing_commitments,
+            &signature_shares,
+            &verifying_shares,
+            &verifying_key,
+        );
+        assert!(res.is_err());
+        match res.unwrap_err() {
+            Error::Cheaters(cheaters) => {
+                assert_eq!(cheaters.len(), 2);
+            }
+            e => assert!(false, "Unexpected error: {:?}", e),
+        }
+    }
 
     #[rstest]
     #[case::ed25519(Scheme::Ed25519Sha512, 32)]
@@ -1035,8 +1101,7 @@ mod tests {
             &verifying_shares,
             &verifying_key,
         );
-        let signature = res.unwrap();
-        assert!(scheme.verify(MSG, &verifying_key, &signature).is_ok());
+        assert!(res.is_ok());
     }
 
     #[rstest]
@@ -1113,18 +1178,13 @@ mod tests {
                 &verifying_key,
             );
             assert!(res.is_ok());
-            let signature = res.unwrap();
-            assert!(scheme.verify(MSG, &verifying_key, &signature).is_ok());
         }
     }
 
-    fn dkg_core<G>(
-        scheme: Scheme,
-        generator: Option<G>,
-        blinder_generator: Option<G>,
-    ) -> (VerifyingKey, Signature)
+    fn dkg_core<G>(scheme: Scheme, generator: Option<G>) -> (VerifyingKey, Signature)
     where
-        G: GroupHasher + GroupEncoding + Group + SumOfProducts + Default,
+        G: GroupEncoding + Group + Default + SumOfProducts,
+        G::Scalar: ScalarHash,
     {
         let threshold: usize = 2;
         let limit: usize = 3;
@@ -1135,18 +1195,21 @@ mod tests {
             NonZeroUsize::new(threshold).unwrap(),
             NonZeroUsize::new(limit).unwrap(),
             generator,
-            blinder_generator,
             None,
         );
         let mut secret_participants = [
-            SecretParticipant::new(IdentifierPrimeField(G::Scalar::from(1u64)), &params).unwrap(),
-            SecretParticipant::new(IdentifierPrimeField(G::Scalar::from(2u64)), &params).unwrap(),
-            SecretParticipant::new(IdentifierPrimeField(G::Scalar::from(3u64)), &params).unwrap(),
+            SecretParticipant::new_secret(IdentifierPrimeField(G::Scalar::from(1u64)), &params)
+                .unwrap(),
+            SecretParticipant::new_secret(IdentifierPrimeField(G::Scalar::from(2u64)), &params)
+                .unwrap(),
+            SecretParticipant::new_secret(IdentifierPrimeField(G::Scalar::from(3u64)), &params)
+                .unwrap(),
         ];
 
         fn next_round<G>(participants: &mut [SecretParticipant<G>]) -> DkgResult<()>
         where
-            G: GroupHasher + GroupEncoding + Group + SumOfProducts + Default,
+            G: GroupEncoding + Group + Default + SumOfProducts,
+            G::Scalar: ScalarHash,
         {
             let mut round_generators = Vec::with_capacity(participants.len());
 
@@ -1166,7 +1229,7 @@ mod tests {
             Ok(())
         }
 
-        for _ in [Round::One, Round::Two, Round::Three, Round::Four] {
+        for _ in [Round::One, Round::Two, Round::Three] {
             let res = next_round(&mut secret_participants);
             assert!(res.is_ok());
         }
@@ -1263,16 +1326,18 @@ mod tests {
             &verifying_shares,
             &verifying_key,
         );
+        assert!(res.is_ok());
         let signature = res.unwrap();
-        assert!(scheme.verify(DKG_MSG, &verifying_key, &signature).is_ok());
         (verifying_key, signature)
     }
 
     #[test]
     fn dkg_k256_taproot() {
         let (verifying_key, signature) =
-            dkg_core::<k256::ProjectivePoint>(Scheme::K256Taproot, None, None);
+            dkg_core::<k256::ProjectivePoint>(Scheme::K256Taproot, None);
 
+        let res = Scheme::K256Taproot.verify(DKG_MSG, &verifying_key, &signature);
+        assert!(res.is_ok());
         let verifying_key: k256::schnorr::VerifyingKey = verifying_key.try_into().unwrap();
         let signature: k256::schnorr::Signature = signature.try_into().unwrap();
         let msg = Sha256::digest(DKG_MSG);
@@ -1284,7 +1349,6 @@ mod tests {
         let (verifying_key, signature) = dkg_core::<jubjub::SubgroupPoint>(
             Scheme::RedJubjubBlake2b512,
             Some(frost_redjubjub::JubjubGroup::generator()),
-            Some(<jubjub::SubgroupPoint as Group>::generator()),
         );
 
         // Orchard uses the pasta curves not jubjub
@@ -1298,7 +1362,7 @@ mod tests {
     #[test]
     fn dkg_decaf377() {
         let (verifying_key, signature) =
-            dkg_core::<decaf377::Element>(Scheme::RedDecaf377Blake2b512, None, None);
+            dkg_core::<decaf377::Element>(Scheme::RedDecaf377Blake2b512, None);
 
         let pk: decaf377_rdsa::VerificationKey<decaf377_rdsa::SpendAuth> =
             verifying_key.try_into().unwrap();
@@ -1308,12 +1372,11 @@ mod tests {
 
     #[test]
     fn dkg_schnorrkel() {
-        let (verifying_key, signature) = dkg_core::<vsss_rs::curve25519::WrappedRistretto>(
-            Scheme::SchnorrkelSubstrate,
-            None,
-            None,
-        );
+        let (verifying_key, signature) =
+            dkg_core::<vsss_rs::curve25519::WrappedRistretto>(Scheme::SchnorrkelSubstrate, None);
 
+        let res = Scheme::SchnorrkelSubstrate.verify(DKG_MSG, &verifying_key, &signature);
+        assert!(res.is_ok());
         let pk: schnorrkel::PublicKey = verifying_key.try_into().unwrap();
         let sg: schnorrkel::Signature = signature.try_into().unwrap();
         assert!(pk.verify_simple(b"substrate", DKG_MSG, &sg).is_ok());

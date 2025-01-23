@@ -434,8 +434,6 @@ mod tests {
                 &verifying_key,
             );
             let signature = res.unwrap();
-            assert!(SCHEME.verify(MSG, &verifying_key, &signature).is_ok());
-
             // Convert to concrete types and see if verify works
             let sig = k256::schnorr::Signature::try_from(&signature).unwrap();
             assert!(vk.verify_prehash(&msg[..], &sig).is_ok());

@@ -1,6 +1,6 @@
 [package]
 name = "lit-frost"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]
@@ -11,17 +11,17 @@ decaf377 = { version = "0.10.1", git = "https://github.com/LIT-Protocol/decaf377
 decaf377-rdsa = { version = "0.11.0" }
 ed25519-dalek = "2.1"
 ed448-goldilocks = { version = "0.13", package = "ed448-goldilocks-plus" }
-frost-core = { version = "2.0.0", features = ["internals"], git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
-frost-decaf377 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
-frost-ed25519 = { version =  "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
-frost-ed448 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
-frost-p256 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
-frost-p384 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
-frost-redjubjub = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
-frost-ristretto255 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
-frost-secp256k1 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
-frost-schnorrkel25519 = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
-frost-taproot = { version = "2.0.0", git = "https://github.com/LIT-Protocol/frost.git", branch = "2.0.0" }
+frost-core = { features = ["internals"], git = "https://github.com/LIT-Protocol/frost.git", branch = "2.1.0" }
+frost-decaf377 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.1.0" }
+frost-ed25519 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.1.0" }
+frost-ed448 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.1.0" }
+frost-p256 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.1.0" }
+frost-p384 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.1.0" }
+frost-redjubjub = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.1.0" }
+frost-ristretto255 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.1.0" }
+frost-secp256k1 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.1.0" }
+frost-schnorrkel25519 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.1.0" }
+frost-taproot = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.1.0" }
 hex = "0.4"
 jubjub = { package="jubjub-plus" , version = "0.10" }
 k256 = { version = "0.13", features = ["arithmetic", "schnorr"] }
@@ -35,7 +35,7 @@ serde_bare = "0.5"
 sha2 = "0.10"
 subtle = "2.6"
 thiserror = "2.0"
-vsss-rs = { version = "5.0.0", features = ["curve25519"] }
+vsss-rs = { version = "5.1.0", features = ["curve25519"] }
 zeroize = "1.8"
 
 [target.'cfg(target_pointer_width = "32")'.dependencies]
@@ -44,9 +44,9 @@ getrandom = { version = "0.2.14", features = ["js"] }
 [dev-dependencies]
 group = "0.13"
 ff = "0.13"
-gennaro-dkg = "1.0.0-rc1"
+frost-dkg = "0.3.0"
 serde_json = "1.0"
 rand = "0.8"
 rand_chacha = "0.3.1"
-rstest = "0.23"
+rstest = "0.24"
 signature_crypto = { version = "2.2", package = "signature" }

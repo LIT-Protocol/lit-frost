@@ -42,7 +42,21 @@ impl<C: Ciphersuite> TryFrom<&Signature> for frost_core::Signature<C> {
                 "Ciphersuite does not match signature".to_string(),
             ));
         }
-        frost_core::Signature::<C>::deserialize(value.value.as_slice())
+        let mut value = value.value.clone();
+        match scheme {
+            Scheme::SchnorrkelSubstrate => {
+                // Unmark for schnorrkel
+                let len = value.len() - 1;
+                value[len] &= !128;
+            }
+            Scheme::K256Taproot => {
+                if value.len() == 64 {
+                    value.insert(0, 0x02);
+                }
+            }
+            _ => {}
+        }
+        frost_core::Signature::<C>::deserialize(value.as_slice())
             .map_err(|_| Error::General("Error deserializing signature".to_string()))
     }
 }
@@ -71,6 +85,10 @@ mod tests {
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
     #[case::decaf377(frost_decaf377::Decaf377Blake2b512, Scheme::RedDecaf377Blake2b512)]
+    #[case::schnorrkel(
+        frost_schnorrkel25519::Schnorrkel25519Merlin,
+        Scheme::SchnorrkelSubstrate
+    )]
     fn convert<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {
         const ITER: usize = 25;
         let mut rng = rand::rngs::OsRng;
@@ -100,6 +118,10 @@ mod tests {
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
     #[case::decaf377(frost_decaf377::Decaf377Blake2b512, Scheme::RedDecaf377Blake2b512)]
+    #[case::schnorrkel(
+        frost_schnorrkel25519::Schnorrkel25519Merlin,
+        Scheme::SchnorrkelSubstrate
+    )]
     fn serialize<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {
         const ITER: usize = 25;
         let mut rng = rand::rngs::OsRng;
