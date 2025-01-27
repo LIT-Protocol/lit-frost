@@ -53,11 +53,13 @@
 mod macros;
 mod error;
 mod identifier;
+#[cfg(not(feature = "verify_only"))]
 mod key_package;
 mod signature;
 mod signature_share;
 mod signing_commitments;
 mod signing_nonces;
+#[cfg(not(feature = "verify_only"))]
 mod signing_share;
 mod verifying_key;
 mod verifying_share;
@@ -75,17 +77,21 @@ pub use vsss_rs;
 
 pub use error::*;
 pub use identifier::Identifier;
+#[cfg(not(feature = "verify_only"))]
 pub use key_package::KeyPackage;
 pub use signature::Signature;
 pub use signature_share::SignatureShare;
 pub use signing_commitments::SigningCommitments;
 pub use signing_nonces::SigningNonces;
+#[cfg(not(feature = "verify_only"))]
 pub use signing_share::SigningShare;
 pub use verifying_key::VerifyingKey;
 pub use verifying_share::VerifyingShare;
 
+#[cfg(not(feature = "verify_only"))]
 use core::num::NonZeroU8;
 use frost_core::Ciphersuite;
+#[cfg(not(feature = "verify_only"))]
 use rand_core::{CryptoRng, RngCore};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sha2::{Digest, Sha256};
@@ -95,6 +101,7 @@ use std::{
     str::FromStr,
 };
 
+#[cfg(not(feature = "verify_only"))]
 /// Export the RedJubJub Generator point
 pub fn red_jubjub_generator() -> jubjub::SubgroupPoint {
     <frost_redjubjub::JubjubGroup as frost_core::Group>::generator()
@@ -205,6 +212,7 @@ impl<'de> Deserialize<'de> for Scheme {
 }
 
 impl Scheme {
+    #[cfg(not(feature = "verify_only"))]
     /// Pregenerate a `count` of signing nonces and commitments that can be used
     /// later to sign a message. These nonce MUST only be used once, otherwise
     /// the long-lived signing key will be leaked.
@@ -245,6 +253,7 @@ impl Scheme {
         }
     }
 
+    #[cfg(not(feature = "verify_only"))]
     /// Compute the first round of the signing protocol if no pregenerated nonces and commitments are available.
     pub fn signing_round1<R: CryptoRng + RngCore>(
         &self,
@@ -279,6 +288,7 @@ impl Scheme {
         }
     }
 
+    #[cfg(not(feature = "verify_only"))]
     /// Compute the second round of the signing protocol and generate a signature.
     pub fn signing_round2(
         &self,
@@ -552,6 +562,7 @@ impl Scheme {
         }
     }
 
+    #[cfg(not(feature = "verify_only"))]
     /// Get the [`VerifyingShare`] from a [`SigningShare`]
     pub fn verifying_share(&self, signing_share: &SigningShare) -> FrostResult<VerifyingShare> {
         if signing_share.scheme != *self {
@@ -656,6 +667,7 @@ impl Scheme {
         }
     }
 
+    #[cfg(not(feature = "verify_only"))]
     /// Perform a key generation with a trusted dealer.
     pub fn generate_with_trusted_dealer<R: CryptoRng + RngCore>(
         &self,
@@ -759,6 +771,7 @@ fn verify<C: Ciphersuite>(
         .map_err(|_| Error::General("Error verifying signature".to_string()))
 }
 
+#[cfg(not(feature = "verify_only"))]
 fn verifying_share<C: Ciphersuite>(signing_share: &SigningShare) -> FrostResult<VerifyingShare> {
     let signing_share: frost_core::keys::SigningShare<C> = signing_share.try_into()?;
     let verifying_share = frost_core::keys::VerifyingShare::<C>::from(signing_share);
@@ -831,6 +844,7 @@ fn aggregate<C: Ciphersuite>(
     Ok(signature.into())
 }
 
+#[cfg(not(feature = "verify_only"))]
 fn round2<C: Ciphersuite>(
     message: &[u8],
     signing_commitments: &[(Identifier, SigningCommitments)],
@@ -859,6 +873,7 @@ fn round2<C: Ciphersuite>(
     Ok(signature.into())
 }
 
+#[cfg(not(feature = "verify_only"))]
 fn round1<C: Ciphersuite, R: CryptoRng + RngCore>(
     secret: &SigningShare,
     rng: &mut R,
@@ -874,6 +889,7 @@ fn round1<C: Ciphersuite, R: CryptoRng + RngCore>(
     Ok((signing_nonces.into(), signing_commitments.into()))
 }
 
+#[cfg(not(feature = "verify_only"))]
 fn preprocess<C: Ciphersuite, R: CryptoRng + RngCore>(
     count: NonZeroU8,
     secret: &SigningShare,
@@ -896,6 +912,7 @@ fn preprocess<C: Ciphersuite, R: CryptoRng + RngCore>(
     ))
 }
 
+#[cfg(not(feature = "verify_only"))]
 // #[cfg(test)]
 fn generate_with_trusted_dealer<C: Ciphersuite, R: CryptoRng + RngCore>(
     min_signers: u16,

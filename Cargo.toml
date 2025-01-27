@@ -3,6 +3,10 @@ name = "lit-frost"
 version = "0.3.0"
 edition = "2021"
 
+[features]
+default = []
+verify_only = []
+
 [dependencies]
 anyhow = "1.0"
 ark-serialize = "0.4"
