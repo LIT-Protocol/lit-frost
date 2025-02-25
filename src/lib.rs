@@ -974,7 +974,6 @@ mod tests {
     use std::num::{NonZeroU16, NonZeroUsize};
     use vsss_rs::elliptic_curve::PrimeField;
     use vsss_rs::IdentifierPrimeField;
-    use zeroize::Zeroize;
 
     const DKG_MSG: &[u8] = b"test";
 
