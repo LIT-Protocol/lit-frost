@@ -1197,6 +1197,64 @@ mod tests {
         }
     }
 
+    // verify that the threshold of 2 is enough to sign a message
+    #[rstest]
+    #[case::ed25519(Scheme::Ed25519Sha512)]
+    #[case::ed448(Scheme::Ed448Shake256)]
+    #[case::ristretto25519(Scheme::Ristretto25519Sha512)]
+    #[case::k256(Scheme::K256Sha256)]
+    #[case::p256(Scheme::P256Sha256)]
+    #[case::p384(Scheme::P384Sha384)]
+    #[case::redjubjub(Scheme::RedJubjubBlake2b512)]
+    #[case::taproot(Scheme::K256Taproot)]
+    #[case::reddecaf377(Scheme::RedDecaf377Blake2b512)]
+    #[case::schnorrkel(Scheme::SchnorrkelSubstrate)]
+    fn min_threshold(#[case] scheme: Scheme) {
+        const MSG: &[u8] = b"test";
+        const THRESHOLD: u16 = 2;
+        let mut rng = rand::rngs::OsRng;
+        let (secret_shares, verifying_key) = scheme.generate_with_trusted_dealer(THRESHOLD, 2, &mut rng).unwrap();
+
+        let mut signing_package = BTreeMap::new();
+        let mut signing_commitments = Vec::new();
+
+        for (id, secret_share) in &secret_shares {
+            let res = scheme.signing_round1(&secret_share, &mut rng);
+            assert!(res.is_ok());
+            let (nonces, commitments) = res.unwrap();
+            signing_package.insert(id.clone(), (nonces, secret_share));
+            signing_commitments.push((id.clone(), commitments));
+        }
+
+        let mut verifying_shares = Vec::new();
+        let mut signature_shares = Vec::new();
+        for (id, (nonces, secret_share)) in signing_package {
+            let res = scheme.signing_round2(
+                MSG,
+                &signing_commitments,
+                &nonces,
+                &KeyPackage {
+                    identifier: id.clone(),
+                    secret_share: secret_share.clone(),
+                    verifying_key: verifying_key.clone(),
+                    threshold: NonZeroU16::new(THRESHOLD).unwrap(),
+                },
+            );
+            let signature = res.unwrap();
+            signature_shares.push((id.clone(), signature));
+            verifying_shares.push((id.clone(), scheme.verifying_share(&secret_share).unwrap()));
+        }
+
+        let res = scheme.aggregate(
+            MSG,
+            &signing_commitments,
+            &signature_shares,
+            &verifying_shares,
+            &verifying_key,
+        );
+        assert!(res.is_ok());
+    }
+
     fn dkg_core<G>(scheme: Scheme, generator: Option<G>) -> (VerifyingKey, Signature)
     where
         G: GroupEncoding + Group + Default + SumOfProducts,
