@@ -42,8 +42,8 @@ impl TryFrom<Signature> for ed25519_dalek::Signature {
     }
 }
 
-impl<S: reddsa::SigType> From<reddsa::Signature<S>> for Signature {
-    fn from(s: reddsa::Signature<S>) -> Self {
+impl From<reddsa::Signature<reddsa::sapling::SpendAuth>> for Signature {
+    fn from(s: reddsa::Signature<reddsa::sapling::SpendAuth>) -> Self {
         let bytes: [u8; 64] = s.into();
         Self {
             scheme: Scheme::RedJubjubBlake2b512,
@@ -52,8 +52,24 @@ impl<S: reddsa::SigType> From<reddsa::Signature<S>> for Signature {
     }
 }
 
-impl<S: reddsa::SigType> From<&reddsa::Signature<S>> for Signature {
-    fn from(s: &reddsa::Signature<S>) -> Self {
+impl From<&reddsa::Signature<reddsa::sapling::SpendAuth>> for Signature {
+    fn from(s: &reddsa::Signature<reddsa::sapling::SpendAuth>) -> Self {
+        Self::from(*s)
+    }
+}
+
+impl From<reddsa::Signature<reddsa::orchard::SpendAuth>> for Signature {
+    fn from(s: reddsa::Signature<reddsa::orchard::SpendAuth>) -> Self {
+        let bytes: [u8; 64] = s.into();
+        Self {
+            scheme: Scheme::RedPallasBlake2b512,
+            value: bytes.to_vec(),
+        }
+    }
+}
+
+impl From<&reddsa::Signature<reddsa::orchard::SpendAuth>> for Signature {
+    fn from(s: &reddsa::Signature<reddsa::orchard::SpendAuth>) -> Self {
         Self::from(*s)
     }
 }
@@ -70,8 +86,9 @@ impl<S: reddsa::SigType> TryFrom<&Signature> for reddsa::Signature<S> {
     type Error = Error;
 
     fn try_from(value: &Signature) -> Result<Self, Self::Error> {
-        let scheme = Scheme::RedJubjubBlake2b512;
-        if scheme != value.scheme {
+        if Scheme::RedPallasBlake2b512 != value.scheme
+            && Scheme::RedJubjubBlake2b512 != value.scheme
+        {
             return Err(Error::General(
                 "Ciphersuite does not match signature".to_string(),
             ));

@@ -83,6 +83,7 @@ mod tests {
     #[case::p256(frost_p256::P256Sha256, Scheme::P256Sha256)]
     #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
+    #[case::redpallas(frost_redpallas::PallasBlake2b512, Scheme::RedPallasBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
     #[case::decaf377(frost_decaf377::Decaf377Blake2b512, Scheme::RedDecaf377Blake2b512)]
     #[case::schnorrkel(
@@ -116,6 +117,7 @@ mod tests {
     #[case::p256(frost_p256::P256Sha256, Scheme::P256Sha256)]
     #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
+    #[case::redpallas(frost_redpallas::PallasBlake2b512, Scheme::RedPallasBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
     #[case::decaf377(frost_decaf377::Decaf377Blake2b512, Scheme::RedDecaf377Blake2b512)]
     #[case::schnorrkel(

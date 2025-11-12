@@ -95,6 +95,11 @@ mod tests {
         frost_redjubjub::JubjubScalarField,
         Scheme::RedJubjubBlake2b512
     )]
+    #[case::redpallas(
+        frost_redpallas::PallasBlake2b512,
+        frost_redpallas::PallasScalarField,
+        Scheme::RedPallasBlake2b512
+    )]
     #[case::taproot(
         frost_taproot::Secp256K1Taproot,
         frost_taproot::Secp256K1TaprootScalarField,
@@ -129,6 +134,7 @@ mod tests {
     #[case::p256(frost_p256::P256ScalarField, Scheme::P256Sha256)]
     #[case::p384(frost_p384::P384ScalarField, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubScalarField, Scheme::RedJubjubBlake2b512)]
+    #[case::redpallas(frost_redpallas::PallasScalarField, Scheme::RedPallasBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1TaprootScalarField, Scheme::K256Taproot)]
     #[case::decaf377(frost_decaf377::Decaf377ScalarField, Scheme::RedDecaf377Blake2b512)]
     fn serialize<F: Field>(#[case] _f: F, #[case] scheme: Scheme) {

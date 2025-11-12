@@ -100,6 +100,11 @@ mod tests {
         frost_redjubjub::JubjubScalarField,
         Scheme::RedJubjubBlake2b512
     )]
+    #[case::redpallas(
+        frost_redpallas::PallasBlake2b512,
+        frost_redpallas::PallasScalarField,
+        Scheme::RedPallasBlake2b512
+    )]
     #[case::taproot(
         frost_taproot::Secp256K1Taproot,
         frost_taproot::Secp256K1TaprootScalarField,
@@ -168,6 +173,11 @@ mod tests {
         frost_redjubjub::JubjubBlake2b512,
         frost_redjubjub::JubjubScalarField,
         Scheme::RedJubjubBlake2b512
+    )]
+    #[case::redpallas(
+        frost_redpallas::PallasBlake2b512,
+        frost_redpallas::PallasScalarField,
+        Scheme::RedPallasBlake2b512
     )]
     #[case::taproot(
         frost_taproot::Secp256K1Taproot,

@@ -156,6 +156,43 @@ try_from_scheme_ref!(jubjub::Scalar, Identifier, |id: &Identifier| {
 
 try_from_scheme_ref!(
     Identifier,
+    pasta_curves::pallas::Scalar,
+    |scheme, id: &pasta_curves::pallas::Scalar| {
+        match scheme {
+            Scheme::RedPallasBlake2b512 => {
+                let bytes = id.to_le_bytes();
+                Ok(Self {
+                    scheme,
+                    id: bytes.to_vec(),
+                })
+            }
+            _ => Err(Error::General("Invalid ciphersuite".to_string())),
+        }
+    }
+);
+try_from_scheme_ref!(
+    pasta_curves::pallas::Scalar,
+    Identifier,
+    |id: &Identifier| {
+        match id.scheme {
+            Scheme::RedPallasBlake2b512 => {
+                let bytes = id
+                    .id
+                    .as_slice()
+                    .try_into()
+                    .map_err(|_| Error::General("Invalid identifier".to_string()))?;
+                Option::<pasta_curves::pallas::Scalar>::from(
+                    pasta_curves::pallas::Scalar::from_le_bytes(bytes),
+                )
+                .ok_or(Error::General("Invalid identifier".to_string()))
+            }
+            _ => Err(Error::General("Invalid ciphersuite".to_string())),
+        }
+    }
+);
+
+try_from_scheme_ref!(
+    Identifier,
     vsss_rs::curve25519_dalek::Scalar,
     |scheme, id: &vsss_rs::curve25519_dalek::Scalar| {
         match scheme {

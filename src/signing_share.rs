@@ -103,6 +103,11 @@ mod tests {
         frost_redjubjub::JubjubScalarField,
         Scheme::RedJubjubBlake2b512
     )]
+    #[case::redpallas(
+        frost_redpallas::PallasBlake2b512,
+        frost_redpallas::PallasScalarField,
+        Scheme::RedPallasBlake2b512
+    )]
     #[case::taproot(
         frost_taproot::Secp256K1Taproot,
         frost_secp256k1::Secp256K1ScalarField,
@@ -233,6 +238,24 @@ mod tests {
     }
 
     #[test]
+    fn convert_redpallas() {
+        use ff::Field as FFField;
+
+        const ITER: usize = 25;
+        let mut rng = rand::rngs::OsRng;
+        for _ in 0..ITER {
+            let share = pasta_curves::pallas::Scalar::random(&mut rng);
+            let share: SigningShare = (Scheme::RedPallasBlake2b512, share).try_into().unwrap();
+            let frost_share = pasta_curves::pallas::Scalar::try_from(&share);
+            assert!(frost_share.is_ok());
+            let frost_share = frost_share.unwrap();
+            let res = SigningShare::try_from((Scheme::RedPallasBlake2b512, &frost_share));
+            assert!(res.is_ok());
+            assert_eq!(share, res.unwrap());
+        }
+    }
+
+    #[test]
     fn convert_vsss_wrapped() {
         use vsss_rs::elliptic_curve::Field;
         const ITER: usize = 25;
@@ -257,6 +280,7 @@ mod tests {
     #[case::p256(frost_p256::P256ScalarField, Scheme::P256Sha256)]
     #[case::p384(frost_p384::P384ScalarField, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubScalarField, Scheme::RedJubjubBlake2b512)]
+    #[case::redpallas(frost_redpallas::PallasScalarField, Scheme::RedPallasBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1TaprootScalarField, Scheme::K256Taproot)]
     #[case::decaf377(frost_decaf377::Decaf377ScalarField, Scheme::RedDecaf377Blake2b512)]
     fn serialize<F: Field>(#[case] _f: F, #[case] scheme: Scheme) {

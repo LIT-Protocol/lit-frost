@@ -56,6 +56,7 @@ impl VerifyingKey {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::red_pallas_generator;
     use frost::Group;
     use frost_core as frost;
     use rstest::*;
@@ -68,6 +69,7 @@ mod tests {
     #[case::p256(frost_p256::P256Sha256, Scheme::P256Sha256)]
     #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
+    #[case::redpallas(frost_redpallas::PallasBlake2b512, Scheme::RedPallasBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
     #[case::decaf377(frost_decaf377::Decaf377Blake2b512, Scheme::RedDecaf377Blake2b512)]
     fn convert_1<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {
@@ -267,6 +269,22 @@ mod tests {
         assert!(res.is_ok());
     }
 
+    #[test]
+    fn convert_redpallas() {
+        const SCHEME: Scheme = Scheme::RedPallasBlake2b512;
+
+        let value = red_pallas_generator();
+        let res = VerifyingKey::try_from((SCHEME, &value));
+        assert!(res.is_ok());
+        let vk = res.unwrap();
+        assert_eq!(vk.scheme, SCHEME);
+        assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
+        let res = pasta_curves::pallas::Point::try_from(&vk);
+        assert!(res.is_ok());
+        let vk2 = res.unwrap();
+        assert_eq!(vk2, value);
+    }
+
     #[rstest]
     #[case::ed25519(frost_ed25519::Ed25519Sha512, Scheme::Ed25519Sha512)]
     #[case::ed448(frost_ed448::Ed448Shake256, Scheme::Ed448Shake256)]
@@ -275,6 +293,7 @@ mod tests {
     #[case::p256(frost_p256::P256Sha256, Scheme::P256Sha256)]
     #[case::p384(frost_p384::P384Sha384, Scheme::P384Sha384)]
     #[case::redjubjub(frost_redjubjub::JubjubBlake2b512, Scheme::RedJubjubBlake2b512)]
+    #[case::redpallas(frost_redpallas::PallasBlake2b512, Scheme::RedPallasBlake2b512)]
     #[case::taproot(frost_taproot::Secp256K1Taproot, Scheme::K256Taproot)]
     #[case::decaf377(frost_decaf377::Decaf377Blake2b512, Scheme::RedDecaf377Blake2b512)]
     fn serialize<C: Ciphersuite>(#[case] _c: C, #[case] scheme: Scheme) {

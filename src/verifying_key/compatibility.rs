@@ -573,6 +573,46 @@ try_from_scheme_ref!(
     vsss_rs::curve25519::WrappedEdwards,
     |scheme, s: &vsss_rs::curve25519::WrappedEdwards| { Self::try_from((scheme, &s.0)) }
 );
+
+try_from_scheme_ref!(
+    VerifyingKey,
+    pasta_curves::pallas::Point,
+    |scheme, s: &pasta_curves::pallas::Point| {
+        use pasta_curves::group::GroupEncoding;
+
+        if scheme != Scheme::RedPallasBlake2b512 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        Ok(Self {
+            scheme,
+            value: s.to_bytes().to_vec(),
+        })
+    }
+);
+try_from_scheme_ref!(
+    pasta_curves::pallas::Point,
+    VerifyingKey,
+    |value: &VerifyingKey| {
+        use pasta_curves::group::GroupEncoding;
+
+        let scheme = value.scheme;
+        if scheme != Scheme::RedPallasBlake2b512 || value.value.len() != 32 {
+            return Err(Error::General(
+                "Ciphersuite does not match verifying key".to_string(),
+            ));
+        }
+        let bytes = <[u8; 32]>::try_from(value.value.as_slice())
+            .expect("Invalid length")
+            .into();
+        Option::<pasta_curves::pallas::Point>::from(pasta_curves::pallas::Point::from_bytes(&bytes))
+            .ok_or(Error::General(
+                "Error converting verifying key from bytes".to_string(),
+            ))
+    }
+);
+
 try_from_scheme_ref!(
     vsss_rs::curve25519::WrappedEdwards,
     VerifyingKey,
@@ -746,7 +786,9 @@ impl<S: reddsa::SigType> TryFrom<&VerifyingKey> for reddsa::VerificationKey<S> {
 
     fn try_from(value: &VerifyingKey) -> Result<Self, Self::Error> {
         let scheme = value.scheme;
-        if scheme != Scheme::RedJubjubBlake2b512 || value.value.len() != 32 {
+        if (scheme != Scheme::RedJubjubBlake2b512 && scheme != Scheme::RedPallasBlake2b512)
+            || value.value.len() != 32
+        {
             return Err(Error::General(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
