@@ -1,4 +1,5 @@
 use crate::Identifier;
+use lit_rust_crypto::vsss_rs;
 use thiserror::Error as TError;
 
 /// Errors generated from this library

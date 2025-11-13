@@ -1,4 +1,5 @@
 use super::*;
+use lit_rust_crypto::*;
 
 impl From<ed25519_dalek::Signature> for Signature {
     fn from(s: ed25519_dalek::Signature) -> Self {
@@ -242,7 +243,7 @@ mod tests {
         use ed25519_dalek::Signer;
 
         let mut rng = rand::thread_rng();
-        let sk = rng.gen::<ed25519_dalek::SecretKey>();
+        let sk = rng.r#gen::<ed25519_dalek::SecretKey>();
         let sk = ed25519_dalek::SigningKey::from(sk);
         let msg = b"Hello, world!";
         let sig = sk.sign(msg);

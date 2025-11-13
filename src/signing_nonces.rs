@@ -1,9 +1,9 @@
 use crate::{Error, Scheme};
 use frost_core::Ciphersuite;
 use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
     de::{SeqAccess, Visitor},
     ser::SerializeTuple,
-    Deserialize, Deserializer, Serialize, Serializer,
 };
 use std::fmt::{self, Display, Formatter};
 use zeroize::{Zeroize, ZeroizeOnDrop};

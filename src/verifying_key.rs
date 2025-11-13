@@ -59,6 +59,7 @@ mod tests {
     use crate::red_pallas_generator;
     use frost::Group;
     use frost_core as frost;
+    use lit_rust_crypto::*;
     use rstest::*;
 
     #[rstest]
@@ -235,7 +236,7 @@ mod tests {
 
     #[test]
     fn convert_redjubjub() {
-        use group::{cofactor::CofactorCurveAffine, Group};
+        use group::{Group, cofactor::CofactorCurveAffine};
 
         const SCHEME: Scheme = Scheme::RedJubjubBlake2b512;
 
@@ -279,7 +280,7 @@ mod tests {
         let vk = res.unwrap();
         assert_eq!(vk.scheme, SCHEME);
         assert_eq!(vk.value.len(), SCHEME.compressed_point_len().unwrap());
-        let res = pasta_curves::pallas::Point::try_from(&vk);
+        let res = pallas::Point::try_from(&vk);
         assert!(res.is_ok());
         let vk2 = res.unwrap();
         assert_eq!(vk2, value);

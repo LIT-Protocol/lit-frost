@@ -1,4 +1,5 @@
 use super::*;
+use lit_rust_crypto::*;
 
 try_from_scheme_ref!(SigningShare, k256::Scalar, |scheme, s: &k256::Scalar| {
     if scheme != Scheme::K256Sha256 && scheme != Scheme::K256Taproot {
@@ -177,11 +178,11 @@ try_from_scheme_ref!(
 );
 try_from_scheme_ref!(
     SigningShare,
-    vsss_rs::curve25519::WrappedScalar,
-    |scheme, s: &vsss_rs::curve25519::WrappedScalar| { Self::try_from((scheme, &s.0)) }
+    curve25519::WrappedScalar,
+    |scheme, s: &curve25519::WrappedScalar| { Self::try_from((scheme, &s.0)) }
 );
 try_from_scheme_ref!(
-    vsss_rs::curve25519::WrappedScalar,
+    curve25519::WrappedScalar,
     SigningShare,
     |value: &SigningShare| {
         let scalar: vsss_rs::curve25519_dalek::Scalar =
@@ -216,8 +217,8 @@ try_from_scheme_ref!(jubjub::Scalar, SigningShare, |value: &SigningShare| {
 });
 try_from_scheme_ref!(
     SigningShare,
-    pasta_curves::pallas::Scalar,
-    |scheme, s: &pasta_curves::pallas::Scalar| {
+    pallas::Scalar,
+    |scheme, s: &pallas::Scalar| {
         if scheme != Scheme::RedPallasBlake2b512 {
             return Err(Error::General(
                 "Signing share scheme does not match ciphersuite".to_string(),
@@ -229,20 +230,16 @@ try_from_scheme_ref!(
         })
     }
 );
-try_from_scheme_ref!(
-    pasta_curves::pallas::Scalar,
-    SigningShare,
-    |value: &SigningShare| {
-        if value.scheme != Scheme::RedPallasBlake2b512 || value.value.len() != 32 {
-            return Err(Error::General(
-                "Signing share scheme does not match ciphersuite".to_string(),
-            ));
-        }
-        let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
-        Option::from(pasta_curves::pallas::Scalar::from_le_bytes(&bytes))
-            .ok_or(Error::General("Error converting signing share".to_string()))
+try_from_scheme_ref!(pallas::Scalar, SigningShare, |value: &SigningShare| {
+    if value.scheme != Scheme::RedPallasBlake2b512 || value.value.len() != 32 {
+        return Err(Error::General(
+            "Signing share scheme does not match ciphersuite".to_string(),
+        ));
     }
-);
+    let bytes = <[u8; 32]>::try_from(value.value.as_slice()).expect("Invalid length");
+    Option::from(pallas::Scalar::from_le_bytes(&bytes))
+        .ok_or(Error::General("Error converting signing share".to_string()))
+});
 try_from_scheme_ref!(SigningShare, decaf377::Fr, |scheme, s: &decaf377::Fr| {
     if scheme != Scheme::RedDecaf377Blake2b512 {
         return Err(Error::General(

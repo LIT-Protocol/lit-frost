@@ -1,4 +1,5 @@
 use super::*;
+use lit_rust_crypto::*;
 
 try_from_scheme_ref!(
     VerifyingKey,
@@ -236,7 +237,7 @@ try_from_scheme_ref!(
     k256::ProjectivePoint,
     VerifyingKey,
     |value: &VerifyingKey| {
-        use k256::elliptic_curve::sec1::FromEncodedPoint;
+        use elliptic_curve::sec1::{EncodedPoint, FromEncodedPoint};
 
         let scheme = value.scheme;
         if (scheme != Scheme::K256Sha256 && scheme != Scheme::K256Taproot)
@@ -246,10 +247,8 @@ try_from_scheme_ref!(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
         }
-        let pt = k256::elliptic_curve::sec1::EncodedPoint::<k256::Secp256k1>::from_bytes(
-            &value.value,
-        )
-        .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))?;
+        let pt = EncodedPoint::<k256::Secp256k1>::from_bytes(&value.value)
+            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))?;
         Option::from(k256::ProjectivePoint::from_encoded_point(&pt))
             .ok_or_else(|| Error::General("Error converting verifying key from bytes".to_string()))
     }
@@ -272,7 +271,7 @@ try_from_scheme_ref!(
     }
 );
 try_from_scheme_ref!(k256::AffinePoint, VerifyingKey, |value: &VerifyingKey| {
-    use k256::elliptic_curve::sec1::FromEncodedPoint;
+    use elliptic_curve::sec1::{EncodedPoint, FromEncodedPoint};
 
     let scheme = value.scheme;
     if (scheme != Scheme::K256Sha256 && scheme != Scheme::K256Taproot) || value.value.len() != 33 {
@@ -280,7 +279,7 @@ try_from_scheme_ref!(k256::AffinePoint, VerifyingKey, |value: &VerifyingKey| {
             "Ciphersuite does not match verifying key".to_string(),
         ));
     }
-    let pt = k256::elliptic_curve::sec1::EncodedPoint::<k256::Secp256k1>::from_bytes(&value.value)
+    let pt = EncodedPoint::<k256::Secp256k1>::from_bytes(&value.value)
         .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))?;
     Option::from(k256::AffinePoint::from_encoded_point(&pt))
         .ok_or_else(|| Error::General("Error converting verifying key from bytes".to_string()))
@@ -306,7 +305,7 @@ try_from_scheme_ref!(
     p256::ProjectivePoint,
     VerifyingKey,
     |value: &VerifyingKey| {
-        use p256::elliptic_curve::sec1::FromEncodedPoint;
+        use p256::elliptic_curve::sec1::{EncodedPoint, FromEncodedPoint};
 
         let scheme = value.scheme;
         if scheme != Scheme::P256Sha256 || value.value.len() != 33 {
@@ -314,11 +313,8 @@ try_from_scheme_ref!(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
         }
-        let pt =
-            p256::elliptic_curve::sec1::EncodedPoint::<p256::NistP256>::from_bytes(&value.value)
-                .map_err(|_| {
-                    Error::General("Error converting verifying key from bytes".to_string())
-                })?;
+        let pt = EncodedPoint::<p256::NistP256>::from_bytes(&value.value)
+            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))?;
         Option::from(p256::ProjectivePoint::from_encoded_point(&pt))
             .ok_or_else(|| Error::General("Error converting verifying key from bytes".to_string()))
     }
@@ -341,7 +337,7 @@ try_from_scheme_ref!(
     }
 );
 try_from_scheme_ref!(p256::AffinePoint, VerifyingKey, |value: &VerifyingKey| {
-    use p256::elliptic_curve::sec1::FromEncodedPoint;
+    use elliptic_curve::sec1::{EncodedPoint, FromEncodedPoint};
 
     let scheme = value.scheme;
     if scheme != Scheme::P256Sha256 || value.value.len() != 33 {
@@ -349,9 +345,8 @@ try_from_scheme_ref!(p256::AffinePoint, VerifyingKey, |value: &VerifyingKey| {
             "Ciphersuite does not match verifying key".to_string(),
         ));
     }
-    let pt =
-        p256::elliptic_curve::sec1::EncodedPoint::<p256::NistP256>::from_bytes(&value.value)
-            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))?;
+    let pt = EncodedPoint::<p256::NistP256>::from_bytes(&value.value)
+        .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))?;
     Option::from(p256::AffinePoint::from_encoded_point(&pt))
         .ok_or_else(|| Error::General("Error converting verifying key from bytes".to_string()))
 });
@@ -359,7 +354,7 @@ try_from_scheme_ref!(
     VerifyingKey,
     p384::ProjectivePoint,
     |scheme, s: &p384::ProjectivePoint| {
-        use p384::elliptic_curve::sec1::ToEncodedPoint;
+        use elliptic_curve::sec1::ToEncodedPoint;
 
         if scheme != Scheme::P384Sha384 {
             return Err(Error::General(
@@ -376,7 +371,7 @@ try_from_scheme_ref!(
     p384::ProjectivePoint,
     VerifyingKey,
     |value: &VerifyingKey| {
-        use p384::elliptic_curve::sec1::FromEncodedPoint;
+        use elliptic_curve::sec1::{EncodedPoint, FromEncodedPoint};
 
         let scheme = value.scheme;
         if scheme != Scheme::P384Sha384 || value.value.len() != 49 {
@@ -384,11 +379,8 @@ try_from_scheme_ref!(
                 "Ciphersuite does not match verifying key".to_string(),
             ));
         }
-        let pt =
-            p384::elliptic_curve::sec1::EncodedPoint::<p384::NistP384>::from_bytes(&value.value)
-                .map_err(|_| {
-                    Error::General("Error converting verifying key from bytes".to_string())
-                })?;
+        let pt = EncodedPoint::<p384::NistP384>::from_bytes(&value.value)
+            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))?;
         Option::from(p384::ProjectivePoint::from_encoded_point(&pt))
             .ok_or_else(|| Error::General("Error converting verifying key from bytes".to_string()))
     }
@@ -397,7 +389,7 @@ try_from_scheme_ref!(
     VerifyingKey,
     p384::AffinePoint,
     |scheme, s: &p384::AffinePoint| {
-        use p384::elliptic_curve::sec1::ToEncodedPoint;
+        use elliptic_curve::sec1::ToEncodedPoint;
 
         if scheme != Scheme::P384Sha384 {
             return Err(Error::General(
@@ -411,7 +403,7 @@ try_from_scheme_ref!(
     }
 );
 try_from_scheme_ref!(p384::AffinePoint, VerifyingKey, |value: &VerifyingKey| {
-    use p384::elliptic_curve::sec1::FromEncodedPoint;
+    use elliptic_curve::sec1::{EncodedPoint, FromEncodedPoint};
 
     let scheme = value.scheme;
     if scheme != Scheme::P384Sha384 || value.value.len() != 49 {
@@ -419,9 +411,8 @@ try_from_scheme_ref!(p384::AffinePoint, VerifyingKey, |value: &VerifyingKey| {
             "Ciphersuite does not match verifying key".to_string(),
         ));
     }
-    let pt =
-        p384::elliptic_curve::sec1::EncodedPoint::<p384::NistP384>::from_bytes(&value.value)
-            .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))?;
+    let pt = EncodedPoint::<p384::NistP384>::from_bytes(&value.value)
+        .map_err(|_| Error::General("Error converting verifying key from bytes".to_string()))?;
     Option::from(p384::AffinePoint::from_encoded_point(&pt))
         .ok_or_else(|| Error::General("Error converting verifying key from bytes".to_string()))
 });
@@ -570,67 +561,58 @@ try_from_scheme_ref!(
 );
 try_from_scheme_ref!(
     VerifyingKey,
-    vsss_rs::curve25519::WrappedEdwards,
-    |scheme, s: &vsss_rs::curve25519::WrappedEdwards| { Self::try_from((scheme, &s.0)) }
+    curve25519::WrappedEdwards,
+    |scheme, s: &curve25519::WrappedEdwards| { Self::try_from((scheme, &s.0)) }
 );
 
-try_from_scheme_ref!(
-    VerifyingKey,
-    pasta_curves::pallas::Point,
-    |scheme, s: &pasta_curves::pallas::Point| {
-        use pasta_curves::group::GroupEncoding;
+try_from_scheme_ref!(VerifyingKey, pallas::Point, |scheme, s: &pallas::Point| {
+    use group::GroupEncoding;
 
-        if scheme != Scheme::RedPallasBlake2b512 {
-            return Err(Error::General(
-                "Ciphersuite does not match verifying key".to_string(),
-            ));
-        }
-        Ok(Self {
-            scheme,
-            value: s.to_bytes().to_vec(),
-        })
+    if scheme != Scheme::RedPallasBlake2b512 {
+        return Err(Error::General(
+            "Ciphersuite does not match verifying key".to_string(),
+        ));
     }
-);
+    Ok(Self {
+        scheme,
+        value: s.to_bytes().to_vec(),
+    })
+});
+try_from_scheme_ref!(pallas::Point, VerifyingKey, |value: &VerifyingKey| {
+    use group::GroupEncoding;
+
+    let scheme = value.scheme;
+    if scheme != Scheme::RedPallasBlake2b512 || value.value.len() != 32 {
+        return Err(Error::General(
+            "Ciphersuite does not match verifying key".to_string(),
+        ));
+    }
+    let bytes = <[u8; 32]>::try_from(value.value.as_slice())
+        .expect("Invalid length")
+        .into();
+    Option::<pallas::Point>::from(pallas::Point::from_bytes(&bytes)).ok_or(Error::General(
+        "Error converting verifying key from bytes".to_string(),
+    ))
+});
+
 try_from_scheme_ref!(
-    pasta_curves::pallas::Point,
+    curve25519::WrappedEdwards,
     VerifyingKey,
     |value: &VerifyingKey| {
-        use pasta_curves::group::GroupEncoding;
-
-        let scheme = value.scheme;
-        if scheme != Scheme::RedPallasBlake2b512 || value.value.len() != 32 {
-            return Err(Error::General(
-                "Ciphersuite does not match verifying key".to_string(),
-            ));
-        }
-        let bytes = <[u8; 32]>::try_from(value.value.as_slice())
-            .expect("Invalid length")
-            .into();
-        Option::<pasta_curves::pallas::Point>::from(pasta_curves::pallas::Point::from_bytes(&bytes))
-            .ok_or(Error::General(
-                "Error converting verifying key from bytes".to_string(),
-            ))
-    }
-);
-
-try_from_scheme_ref!(
-    vsss_rs::curve25519::WrappedEdwards,
-    VerifyingKey,
-    |value: &VerifyingKey| {
-        let pt = vsss_rs::curve25519::WrappedEdwards::try_from(value)?;
+        let pt = curve25519::WrappedEdwards::try_from(value)?;
         Ok(Self(pt.0))
     }
 );
 try_from_scheme_ref!(
     VerifyingKey,
-    vsss_rs::curve25519::WrappedRistretto,
-    |scheme, s: &vsss_rs::curve25519::WrappedRistretto| { Self::try_from((scheme, &s.0)) }
+    curve25519::WrappedRistretto,
+    |scheme, s: &curve25519::WrappedRistretto| { Self::try_from((scheme, &s.0)) }
 );
 try_from_scheme_ref!(
-    vsss_rs::curve25519::WrappedRistretto,
+    curve25519::WrappedRistretto,
     VerifyingKey,
     |value: &VerifyingKey| {
-        let pt = vsss_rs::curve25519::WrappedRistretto::try_from(value)?;
+        let pt = curve25519::WrappedRistretto::try_from(value)?;
         Ok(Self(pt.0))
     }
 );

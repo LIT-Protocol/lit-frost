@@ -65,6 +65,7 @@ impl SigningShare {
 mod tests {
     use super::*;
     use frost_core::Field;
+    use lit_rust_crypto::*;
     use rstest::*;
 
     #[rstest]
@@ -244,9 +245,9 @@ mod tests {
         const ITER: usize = 25;
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
-            let share = pasta_curves::pallas::Scalar::random(&mut rng);
+            let share = pallas::Scalar::random(&mut rng);
             let share: SigningShare = (Scheme::RedPallasBlake2b512, share).try_into().unwrap();
-            let frost_share = pasta_curves::pallas::Scalar::try_from(&share);
+            let frost_share = pallas::Scalar::try_from(&share);
             assert!(frost_share.is_ok());
             let frost_share = frost_share.unwrap();
             let res = SigningShare::try_from((Scheme::RedPallasBlake2b512, &frost_share));
@@ -261,9 +262,9 @@ mod tests {
         const ITER: usize = 25;
         let mut rng = rand::rngs::OsRng;
         for _ in 0..ITER {
-            let share = vsss_rs::curve25519::WrappedScalar::random(&mut rng);
+            let share = curve25519::WrappedScalar::random(&mut rng);
             let share: SigningShare = (Scheme::Ed25519Sha512, share).try_into().unwrap();
-            let frost_share = vsss_rs::curve25519::WrappedScalar::try_from(&share);
+            let frost_share = curve25519::WrappedScalar::try_from(&share);
             assert!(frost_share.is_ok());
             let frost_share = frost_share.unwrap();
             let res = SigningShare::try_from((Scheme::Ed25519Sha512, &frost_share));

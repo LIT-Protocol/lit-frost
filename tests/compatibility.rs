@@ -1,4 +1,5 @@
 use lit_frost::{KeyPackage, Scheme, Signature, VerifyingKey};
+use lit_rust_crypto::*;
 use signature_crypto::Verifier;
 use std::collections::BTreeMap;
 use std::num::NonZeroU16;

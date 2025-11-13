@@ -1,5 +1,5 @@
-use crate::{Error, Identifier, Scheme};
-use vsss_rs::elliptic_curve::PrimeField;
+use crate::*;
+use elliptic_curve::PrimeField;
 
 try_from_scheme_ref!(Identifier, k256::Scalar, |scheme, id: &k256::Scalar| {
     match scheme {
@@ -154,42 +154,32 @@ try_from_scheme_ref!(jubjub::Scalar, Identifier, |id: &Identifier| {
     }
 });
 
-try_from_scheme_ref!(
-    Identifier,
-    pasta_curves::pallas::Scalar,
-    |scheme, id: &pasta_curves::pallas::Scalar| {
-        match scheme {
-            Scheme::RedPallasBlake2b512 => {
-                let bytes = id.to_le_bytes();
-                Ok(Self {
-                    scheme,
-                    id: bytes.to_vec(),
-                })
-            }
-            _ => Err(Error::General("Invalid ciphersuite".to_string())),
+try_from_scheme_ref!(Identifier, pallas::Scalar, |scheme, id: &pallas::Scalar| {
+    match scheme {
+        Scheme::RedPallasBlake2b512 => {
+            let bytes = id.to_le_bytes();
+            Ok(Self {
+                scheme,
+                id: bytes.to_vec(),
+            })
         }
+        _ => Err(Error::General("Invalid ciphersuite".to_string())),
     }
-);
-try_from_scheme_ref!(
-    pasta_curves::pallas::Scalar,
-    Identifier,
-    |id: &Identifier| {
-        match id.scheme {
-            Scheme::RedPallasBlake2b512 => {
-                let bytes = id
-                    .id
-                    .as_slice()
-                    .try_into()
-                    .map_err(|_| Error::General("Invalid identifier".to_string()))?;
-                Option::<pasta_curves::pallas::Scalar>::from(
-                    pasta_curves::pallas::Scalar::from_le_bytes(bytes),
-                )
+});
+try_from_scheme_ref!(pallas::Scalar, Identifier, |id: &Identifier| {
+    match id.scheme {
+        Scheme::RedPallasBlake2b512 => {
+            let bytes = id
+                .id
+                .as_slice()
+                .try_into()
+                .map_err(|_| Error::General("Invalid identifier".to_string()))?;
+            Option::<pallas::Scalar>::from(pallas::Scalar::from_le_bytes(bytes))
                 .ok_or(Error::General("Invalid identifier".to_string()))
-            }
-            _ => Err(Error::General("Invalid ciphersuite".to_string())),
         }
+        _ => Err(Error::General("Invalid ciphersuite".to_string())),
     }
-);
+});
 
 try_from_scheme_ref!(
     Identifier,
@@ -229,17 +219,13 @@ try_from_scheme_ref!(
 );
 try_from_scheme_ref!(
     Identifier,
-    vsss_rs::curve25519::WrappedScalar,
-    |scheme, id: &vsss_rs::curve25519::WrappedScalar| { Self::try_from((scheme, &id.0)) }
+    curve25519::WrappedScalar,
+    |scheme, id: &curve25519::WrappedScalar| { Self::try_from((scheme, &id.0)) }
 );
-try_from_scheme_ref!(
-    vsss_rs::curve25519::WrappedScalar,
-    Identifier,
-    |id: &Identifier| {
-        let scalar = vsss_rs::curve25519::WrappedScalar::try_from(id)?;
-        Ok(Self(scalar.0))
-    }
-);
+try_from_scheme_ref!(curve25519::WrappedScalar, Identifier, |id: &Identifier| {
+    let scalar = curve25519::WrappedScalar::try_from(id)?;
+    Ok(Self(scalar.0))
+});
 try_from_scheme_ref!(Identifier, decaf377::Fr, |scheme, id: &decaf377::Fr| {
     match scheme {
         Scheme::RedDecaf377Blake2b512 => {

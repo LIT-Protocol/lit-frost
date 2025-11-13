@@ -1,6 +1,6 @@
 mod compatibility;
 
-use crate::{is_zero, ByteOrder, Error, Scheme};
+use crate::{ByteOrder, Error, Scheme, is_zero};
 use frost_core::Ciphersuite;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, Display, Formatter};

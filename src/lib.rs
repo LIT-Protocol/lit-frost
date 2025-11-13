@@ -64,16 +64,13 @@ mod signing_share;
 mod verifying_key;
 mod verifying_share;
 
-pub use curve25519_dalek;
-pub use decaf377;
+use lit_rust_crypto::*;
+pub use lit_rust_crypto::{
+    self, curve25519_dalek, decaf377, ed448_goldilocks, jubjub, k256, p256, p384, vsss_rs,
+};
+
 pub use ed25519_dalek;
-pub use ed448_goldilocks;
-pub use jubjub;
-pub use k256;
-pub use p256;
-pub use p384;
 pub use schnorrkel;
-pub use vsss_rs;
 
 pub use error::*;
 pub use identifier::Identifier;
@@ -109,7 +106,7 @@ pub fn red_jubjub_generator() -> jubjub::SubgroupPoint {
 
 #[cfg(not(feature = "verify_only"))]
 /// Export the RedPallas Generator point
-pub fn red_pallas_generator() -> pasta_curves::pallas::Point {
+pub fn red_pallas_generator() -> pallas::Point {
     <frost_redpallas::PallasGroup as frost_core::Group>::generator()
 }
 
@@ -1017,8 +1014,8 @@ mod tests {
     use rand_core::SeedableRng;
     use rstest::*;
     use std::num::{NonZeroU16, NonZeroUsize};
-    use vsss_rs::elliptic_curve::PrimeField;
     use vsss_rs::IdentifierPrimeField;
+    use vsss_rs::elliptic_curve::PrimeField;
 
     const DKG_MSG: &[u8] = b"test";
 
@@ -1343,8 +1340,8 @@ mod tests {
                 round_generators.push(round_generator);
             }
 
-            for gen in &round_generators {
-                for data in gen.iter() {
+            for generator in &round_generators {
+                for data in generator.iter() {
                     let p = &mut participants[data.dst_ordinal];
                     assert_eq!(data.dst_ordinal, p.get_ordinal());
                     assert_eq!(data.dst_id, p.get_id());
@@ -1486,7 +1483,7 @@ mod tests {
 
     #[test]
     fn dkg_pallas() {
-        let (verifying_key, signature) = dkg_core::<pasta_curves::pallas::Point>(
+        let (verifying_key, signature) = dkg_core::<pallas::Point>(
             Scheme::RedPallasBlake2b512,
             Some(frost_redpallas::PallasGroup::generator()),
         );
@@ -1513,7 +1510,7 @@ mod tests {
     #[test]
     fn dkg_schnorrkel() {
         let (verifying_key, signature) =
-            dkg_core::<vsss_rs::curve25519::WrappedRistretto>(Scheme::SchnorrkelSubstrate, None);
+            dkg_core::<curve25519::WrappedRistretto>(Scheme::SchnorrkelSubstrate, None);
 
         let res = Scheme::SchnorrkelSubstrate.verify(DKG_MSG, &verifying_key, &signature);
         assert!(res.is_ok());

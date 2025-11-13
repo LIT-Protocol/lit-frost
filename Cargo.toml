@@ -1,7 +1,7 @@
 [package]
 name = "lit-frost"
-version = "0.3.0"
-edition = "2021"
+version = "0.4.0"
+edition = "2024"
 
 [features]
 default = []
@@ -10,11 +10,8 @@ verify_only = []
 [dependencies]
 anyhow = "1.0"
 ark-serialize = "0.4"
-curve25519-dalek = { version = "=4.3.0", features = ["rand_core", "group"], package = "curve25519-dalek-ml" }
-decaf377 = { version = "0.10.1", git = "https://github.com/LIT-Protocol/decaf377.git", rev = "b2f76eda2e56bbaa818196d7c2d795312bbfbd92" }
 decaf377-rdsa = { version = "0.11.0" }
 ed25519-dalek = "2.1"
-ed448-goldilocks = { version = "0.16", package = "ed448-goldilocks-plus" }
 frost-core = { features = ["internals"], git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
 frost-decaf377 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
 frost-ed25519 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
@@ -28,11 +25,6 @@ frost-secp256k1 = { git = "https://github.com/LIT-Protocol/frost.git", branch = 
 frost-schnorrkel25519 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
 frost-taproot = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
 hex = "0.4"
-jubjub = { package="jubjub-plus" , version = "0.10" }
-k256 = { version = "0.13", features = ["arithmetic", "schnorr"] }
-p256 = { version = "0.13", features = ["arithmetic"] }
-p384 = { version = "0.13", features = ["arithmetic"] }
-pasta_curves = { version = "0.5", git = "https://github.com/LIT-Protocol/pasta_curves.git", features = ["alloc", "serde"] }
 rand_core = "0.6"
 reddsa = "0.5"
 schnorrkel = "0.11"
@@ -41,8 +33,24 @@ serde_bare = "0.5"
 sha2 = "0.10"
 subtle = "2.6"
 thiserror = "2.0"
-vsss-rs = { version = "5.1.0", features = ["curve25519"] }
 zeroize = "1.8"
+
+[dependencies.lit-rust-crypto]
+git = "https://github.com/LIT-Protocol/lit-rust-crypto"
+tag = "0.5.0"
+features = [
+    "blst",
+    "curve25519-dalek-default",
+    "decaf377-default",
+    "elliptic-curve-default",
+    "ed448-goldilocks-default",
+    "jubjub-default",
+    "k256-default",
+    "p256-default",
+    "p384-default",
+    "pasta-default",
+    "vsss-rs-default",
+]
 
 [target.'cfg(target_pointer_width = "32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
