@@ -56,7 +56,6 @@ impl VerifyingKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::red_pallas_generator;
     use frost::Group;
     use frost_core as frost;
     use lit_rust_crypto::*;
@@ -274,7 +273,7 @@ mod tests {
     fn convert_redpallas() {
         const SCHEME: Scheme = Scheme::RedPallasBlake2b512;
 
-        let value = red_pallas_generator();
+        let value = red_pallas_signing_generator();
         let res = VerifyingKey::try_from((SCHEME, &value));
         assert!(res.is_ok());
         let vk = res.unwrap();

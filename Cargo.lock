@@ -827,7 +827,7 @@ checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 [[package]]
 name = "frost-core"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
  "byteorder",
  "const-crc32-nostd",
@@ -850,7 +850,7 @@ dependencies = [
 [[package]]
 name = "frost-decaf377"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
  "ark-serialize",
  "blake2b_simd 1.0.3",
@@ -891,12 +891,12 @@ dependencies = [
 [[package]]
 name = "frost-ed25519"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
- "curve25519-dalek-ml",
  "document-features",
  "frost-core",
  "frost-rerandomized",
+ "lit-rust-crypto",
  "rand_core",
  "sha2",
 ]
@@ -904,7 +904,7 @@ dependencies = [
 [[package]]
 name = "frost-ed448"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
  "document-features",
  "frost-core",
@@ -917,7 +917,7 @@ dependencies = [
 [[package]]
 name = "frost-p256"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
  "document-features",
  "frost-core",
@@ -930,7 +930,7 @@ dependencies = [
 [[package]]
 name = "frost-p384"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
  "document-features",
  "frost-core",
@@ -943,7 +943,7 @@ dependencies = [
 [[package]]
 name = "frost-redjubjub"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
  "blake2b_simd 1.0.3",
  "document-features",
@@ -956,7 +956,7 @@ dependencies = [
 [[package]]
 name = "frost-redpallas"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
  "blake2b_simd 1.0.3",
  "document-features",
@@ -969,7 +969,7 @@ dependencies = [
 [[package]]
 name = "frost-rerandomized"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
  "derive-getters",
  "document-features",
@@ -981,12 +981,12 @@ dependencies = [
 [[package]]
 name = "frost-ristretto255"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
- "curve25519-dalek-ml",
  "document-features",
  "frost-core",
  "frost-rerandomized",
+ "lit-rust-crypto",
  "rand_core",
  "sha2",
 ]
@@ -994,13 +994,13 @@ dependencies = [
 [[package]]
 name = "frost-schnorrkel25519"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
  "byte-strings",
- "curve25519-dalek-ml",
  "document-features",
  "frost-core",
  "frost-rerandomized",
+ "lit-rust-crypto",
  "merlin",
  "rand_core",
  "schnorrkel",
@@ -1009,7 +1009,7 @@ dependencies = [
 [[package]]
 name = "frost-secp256k1"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
  "document-features",
  "frost-core",
@@ -1022,12 +1022,12 @@ dependencies = [
 [[package]]
 name = "frost-taproot"
 version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#6103808256ce5171975d6c6db109c537da04555b"
+source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
 dependencies = [
  "document-features",
  "frost-core",
  "frost-rerandomized",
- "k256",
+ "lit-rust-crypto",
  "rand_core",
  "sha2",
  "signature",
@@ -1320,9 +1320,9 @@ dependencies = [
 
 [[package]]
 name = "jubjub-plus"
-version = "0.10.8"
+version = "0.10.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c2c5e88d1ac6a903e693287073860ea35299b200273d5c2bd9d7845ec39f319"
+checksum = "b0fcad3e0c0304ef9feef976239c7972da3b91008a0d6d2d577d632a215b73b9"
 dependencies = [
  "bitvec",
  "bls12_381_plus",
@@ -1420,8 +1420,8 @@ dependencies = [
 
 [[package]]
 name = "lit-rust-crypto"
-version = "0.5.0"
-source = "git+https://github.com/LIT-Protocol/lit-rust-crypto?tag=0.5.0#0b3e4d5a9811ce151da83cab4835cf5631c9a5c3"
+version = "0.6.0"
+source = "git+https://github.com/LIT-Protocol/lit-rust-crypto?tag=0.6.0#9548fce521473f289ea1366249b782355e96507d"
 dependencies = [
  "bls12_381_plus",
  "blsful",
@@ -1639,9 +1639,9 @@ dependencies = [
 
 [[package]]
 name = "pasta_curves_plus"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bacb1f6f3ee2acc4eceb7503270053a233abfd48a1160f555b0bc30389e0917"
+checksum = "42e265b7ebdbfc61a8c0eeac79350cf3225cd390325dc91dd0edede5b6742d58"
 dependencies = [
  "blake2",
  "blake2b_simd 1.0.3",

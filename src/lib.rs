@@ -98,18 +98,6 @@ use std::{
     str::FromStr,
 };
 
-#[cfg(not(feature = "verify_only"))]
-/// Export the RedJubJub Generator point
-pub fn red_jubjub_generator() -> jubjub::SubgroupPoint {
-    <frost_redjubjub::JubjubGroup as frost_core::Group>::generator()
-}
-
-#[cfg(not(feature = "verify_only"))]
-/// Export the RedPallas Generator point
-pub fn red_pallas_generator() -> pallas::Point {
-    <frost_redpallas::PallasGroup as frost_core::Group>::generator()
-}
-
 /// The FROST supported signature schemes
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy, Default)]
 #[repr(u8)]
