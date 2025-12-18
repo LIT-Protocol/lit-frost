@@ -215,9 +215,9 @@ checksum = "4c7f02d4ea65f2c1853089ffd8d2787bdbc63de2f0d29dedbcf8ccdfa0ccd4cf"
 
 [[package]]
 name = "base64ct"
-version = "1.8.0"
+version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55248b47b0caf0546f7988906588779981c43bb1bc9d0c44087278f80cdb44ba"
+checksum = "0e050f626429857a27ddccb31e0aca21356bfa709c04041aefddac081a8f068a"
 
 [[package]]
 name = "bitvec"
@@ -359,9 +359,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.19.0"
+version = "3.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
+checksum = "5dd9dc738b7a8311c7ade152424974d8115f2cdad61e8dab8dac9f2362298510"
 
 [[package]]
 name = "byte-strings"
@@ -380,7 +380,7 @@ checksum = "62f7e0e71f98d6c71bfe42b0a7a47d0f870ad808401fad2d44fa156ed5b0ae03"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 2.0.111",
 ]
 
 [[package]]
@@ -391,9 +391,9 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "cc"
-version = "1.2.45"
+version = "1.2.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35900b6c8d709fb1d854671ae27aeaa9eec2f8b01b364e1619a40da3e6fe2afe"
+checksum = "90583009037521a116abf44494efecd645ba48b6622457080f080b85544e2215"
 dependencies = [
  "find-msvc-tools",
  "shlex",
@@ -415,10 +415,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "const-crc32-nostd"
-version = "1.3.1"
+name = "const-crc32"
+version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "808ac43170e95b11dd23d78aa9eaac5bea45776a602955552c4e833f3f0f823d"
+checksum = "68d13f542d70e5b339bf46f6f74704ac052cfd526c58cd87996bd1ef4615b9a0"
 
 [[package]]
 name = "const-oid"
@@ -513,7 +513,7 @@ checksum = "f46882e17999c6cc590af592290432be3bce0428cb0d5f8b6715e4dc7b383eb3"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 2.0.111",
 ]
 
 [[package]]
@@ -602,7 +602,6 @@ dependencies = [
  "num-bigint",
  "once_cell",
  "rand_core",
- "serdect 0.3.0",
  "subtle",
  "zeroize",
 ]
@@ -631,13 +630,13 @@ dependencies = [
 
 [[package]]
 name = "derive-getters"
-version = "0.5.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74ef43543e701c01ad77d3a5922755c6a1d71b22d942cb8042be4994b380caff"
+checksum = "7a2c35ab6e03642397cdda1dd58abbc05d418aef8e36297f336d5aba060fe8df"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -680,7 +679,6 @@ dependencies = [
  "digest 0.10.7",
  "elliptic-curve",
  "rfc6979",
- "serdect 0.2.0",
  "signature",
  "spki",
 ]
@@ -705,6 +703,21 @@ dependencies = [
  "ed25519",
  "serde",
  "sha2",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
+name = "ed448-goldilocks-plus"
+version = "0.13.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c09e17cf228a2e585a1ba04edfa273c32d8eff51e4be19b131521aa8a7d85e87"
+dependencies = [
+ "crypto-bigint",
+ "elliptic-curve",
+ "rand_core",
+ "serdect 0.3.0",
+ "sha3",
  "subtle",
  "zeroize",
 ]
@@ -808,9 +821,9 @@ checksum = "28dea519a9695b9977216879a3ebfddf92f1c08c05d984f8996aecd6ecdc811d"
 
 [[package]]
 name = "find-msvc-tools"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52051878f80a721bb68ebfbc930e07b65ba72f2da88968ea5c06fd6ca3d3a127"
+checksum = "3a3076410a55c90011c298b04d0cfa770b00fa04e1e3c97d3f6c9de105a03844"
 
 [[package]]
 name = "foldhash"
@@ -825,43 +838,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
-name = "frost-core"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "byteorder",
- "const-crc32-nostd",
- "debugless-unwrap",
- "derive-getters",
- "document-features",
- "hex",
- "itertools 0.14.0",
- "postcard",
- "rand_core",
- "serde",
- "serdect 0.2.0",
- "subtle",
- "thiserror 2.0.17",
- "thiserror-nostd-notrait",
- "visibility",
- "zeroize",
-]
-
-[[package]]
-name = "frost-decaf377"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "ark-serialize",
- "blake2b_simd 1.0.3",
- "frost-core",
- "frost-rerandomized",
- "lit-rust-crypto",
- "num-traits",
- "rand_core",
-]
-
-[[package]]
 name = "frost-dkg"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -870,7 +846,7 @@ dependencies = [
  "blake2",
  "blsful",
  "curve25519-dalek-ml",
- "ed448-goldilocks-plus",
+ "ed448-goldilocks-plus 0.16.0",
  "elliptic-curve",
  "elliptic-curve-tools",
  "hex",
@@ -878,7 +854,7 @@ dependencies = [
  "k256",
  "merlin",
  "p256",
- "p384 0.13.1",
+ "p384",
  "postcard",
  "rand_core",
  "serde",
@@ -886,151 +862,6 @@ dependencies = [
  "sha3",
  "thiserror 2.0.17",
  "vsss-rs",
-]
-
-[[package]]
-name = "frost-ed25519"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "document-features",
- "frost-core",
- "frost-rerandomized",
- "lit-rust-crypto",
- "rand_core",
- "sha2",
-]
-
-[[package]]
-name = "frost-ed448"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "document-features",
- "frost-core",
- "frost-rerandomized",
- "lit-rust-crypto",
- "rand_core",
- "sha3",
-]
-
-[[package]]
-name = "frost-p256"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "document-features",
- "frost-core",
- "frost-rerandomized",
- "p256",
- "rand_core",
- "sha2",
-]
-
-[[package]]
-name = "frost-p384"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "document-features",
- "frost-core",
- "frost-rerandomized",
- "p384 0.13.0",
- "rand_core",
- "sha2",
-]
-
-[[package]]
-name = "frost-redjubjub"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "blake2b_simd 1.0.3",
- "document-features",
- "frost-core",
- "frost-rerandomized",
- "lit-rust-crypto",
- "rand_core",
-]
-
-[[package]]
-name = "frost-redpallas"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "blake2b_simd 1.0.3",
- "document-features",
- "frost-core",
- "frost-rerandomized",
- "lit-rust-crypto",
- "rand_core",
-]
-
-[[package]]
-name = "frost-rerandomized"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "derive-getters",
- "document-features",
- "frost-core",
- "hex",
- "rand_core",
-]
-
-[[package]]
-name = "frost-ristretto255"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "document-features",
- "frost-core",
- "frost-rerandomized",
- "lit-rust-crypto",
- "rand_core",
- "sha2",
-]
-
-[[package]]
-name = "frost-schnorrkel25519"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "byte-strings",
- "document-features",
- "frost-core",
- "frost-rerandomized",
- "lit-rust-crypto",
- "merlin",
- "rand_core",
- "schnorrkel",
-]
-
-[[package]]
-name = "frost-secp256k1"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "document-features",
- "frost-core",
- "frost-rerandomized",
- "k256",
- "rand_core",
- "sha2",
-]
-
-[[package]]
-name = "frost-taproot"
-version = "2.2.0"
-source = "git+https://github.com/LIT-Protocol/frost.git?branch=2.2.0#613ae60ad77a8a5cf973c4a8c7be2c20e9b13d89"
-dependencies = [
- "document-features",
- "frost-core",
- "frost-rerandomized",
- "lit-rust-crypto",
- "rand_core",
- "sha2",
- "signature",
 ]
 
 [[package]]
@@ -1053,7 +884,7 @@ checksum = "162ee34ebcb7c64a8abebc059ce0fee27c2262618d7b60ed8faf72fef13c3650"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 2.0.111",
 ]
 
 [[package]]
@@ -1196,9 +1027,9 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.16.0"
+version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5419bdc4f6a9207fbeba6d11b604d481addf78ecd10c11ad51e76c2f6482748d"
+checksum = "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100"
 dependencies = [
  "foldhash 0.2.0",
 ]
@@ -1262,12 +1093,12 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.12.0"
+version = "2.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6717a8d2a5a929a1a2eb43a12812498ed141a0bcfb7e8f7844fbdbe4303bba9f"
+checksum = "0ad4bb2b565bca0645f4d68c5c9af97fba094e9791da685bf83cb5f3ce74acf2"
 dependencies = [
  "equivalent",
- "hashbrown 0.16.0",
+ "hashbrown 0.16.1",
 ]
 
 [[package]]
@@ -1281,9 +1112,9 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.14.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
 dependencies = [
  "either",
 ]
@@ -1296,9 +1127,9 @@ checksum = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c"
 
 [[package]]
 name = "js-sys"
-version = "0.3.82"
+version = "0.3.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b011eec8cc36da2aab2d5cff675ec18454fad408585853910a202391cf9f8e65"
+checksum = "464a3709c7f55f1f721e5389aa6ea4e3bc6aba669353300af094b29ffbdde1d8"
 dependencies = [
  "once_cell",
  "wasm-bindgen",
@@ -1320,9 +1151,9 @@ dependencies = [
 
 [[package]]
 name = "jubjub-plus"
-version = "0.10.9"
+version = "0.10.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0fcad3e0c0304ef9feef976239c7972da3b91008a0d6d2d577d632a215b73b9"
+checksum = "e8cd4e5cd65bb1390238c9e2e7dc98078a7b146c9d0d080cf3a7b1ac0d2348ac"
 dependencies = [
  "bitvec",
  "bls12_381_plus",
@@ -1347,7 +1178,6 @@ dependencies = [
  "ecdsa",
  "elliptic-curve",
  "once_cell",
- "serdect 0.2.0",
  "sha2",
  "signature",
 ]
@@ -1372,9 +1202,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.177"
+version = "0.2.178"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2874a2af47a2325c2001a6e6fad9b16a53b802102b528163885171cf92b15976"
+checksum = "37c93d8daa9d8a012fd8ab92f088405fb202ea0b6ab73ee2482ae66af4f42091"
 
 [[package]]
 name = "lit-frost"
@@ -1385,22 +1215,22 @@ dependencies = [
  "decaf377-rdsa",
  "ed25519-dalek",
  "ff",
- "frost-core",
- "frost-decaf377",
  "frost-dkg",
- "frost-ed25519",
- "frost-ed448",
- "frost-p256",
- "frost-p384",
- "frost-redjubjub",
- "frost-redpallas",
- "frost-ristretto255",
- "frost-schnorrkel25519",
- "frost-secp256k1",
- "frost-taproot",
  "getrandom",
  "group",
  "hex",
+ "lit-frost-core",
+ "lit-frost-decaf377",
+ "lit-frost-ed25519",
+ "lit-frost-ed448",
+ "lit-frost-p256",
+ "lit-frost-p384",
+ "lit-frost-redjubjub",
+ "lit-frost-redpallas",
+ "lit-frost-ristretto255",
+ "lit-frost-schnorrkel25519",
+ "lit-frost-secp256k1",
+ "lit-frost-taproot",
  "lit-rust-crypto",
  "rand",
  "rand_chacha",
@@ -1419,21 +1249,229 @@ dependencies = [
 ]
 
 [[package]]
+name = "lit-frost-core"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "578be9b1245fe18bc1d12a326e6135ea3a461346af6b797254d40e2615acc2f9"
+dependencies = [
+ "byteorder",
+ "const-crc32",
+ "debugless-unwrap",
+ "derive-getters",
+ "document-features",
+ "hex",
+ "itertools 0.12.1",
+ "postcard",
+ "rand_core",
+ "serde",
+ "serdect 0.2.0",
+ "subtle",
+ "thiserror 1.0.69",
+ "visibility",
+ "zeroize",
+]
+
+[[package]]
+name = "lit-frost-decaf377"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06f4211c8a1798555e6e10a8e405b1087dfaca226cf49149914753c148766104"
+dependencies = [
+ "ark-serialize",
+ "blake2b_simd 1.0.3",
+ "decaf377_plus",
+ "lit-frost-core",
+ "lit-frost-rerandomized",
+ "num-traits",
+ "rand_core",
+ "schnorrkel",
+]
+
+[[package]]
+name = "lit-frost-ed25519"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14b10dcd8327da338d8c1e28b6e02a465e5908f5a092411548e58ee055e7d609"
+dependencies = [
+ "curve25519-dalek-ml",
+ "document-features",
+ "lit-frost-core",
+ "lit-frost-rerandomized",
+ "rand_core",
+ "sha2",
+]
+
+[[package]]
+name = "lit-frost-ed448"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74a12d065821dae158615e3b687e42e149de450f4a74690e5f7bde7c97510bd5"
+dependencies = [
+ "document-features",
+ "ed448-goldilocks-plus 0.13.3",
+ "lit-frost-core",
+ "lit-frost-rerandomized",
+ "rand_core",
+ "sha3",
+]
+
+[[package]]
+name = "lit-frost-p256"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60ac0db0d9ee2f104a4447c3bbfad9c11535157b41b5fcf241557f89f8d36abc"
+dependencies = [
+ "document-features",
+ "lit-frost-core",
+ "lit-frost-rerandomized",
+ "p256",
+ "rand_core",
+ "sha2",
+]
+
+[[package]]
+name = "lit-frost-p384"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2beb445bb9dac3e7c4faa379664ccf27a2d0a2bcde6dad970b7ee87b8cd885e4"
+dependencies = [
+ "document-features",
+ "lit-frost-core",
+ "lit-frost-rerandomized",
+ "lit-p384",
+ "rand_core",
+ "sha2",
+]
+
+[[package]]
+name = "lit-frost-redjubjub"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25bcb5b8078c540da0fe7f5e70f9de40ce099ca19c521702966e57c3a04415ff"
+dependencies = [
+ "blake2b_simd 1.0.3",
+ "document-features",
+ "group",
+ "jubjub-plus",
+ "lit-frost-core",
+ "lit-frost-rerandomized",
+ "rand_core",
+ "sha2",
+]
+
+[[package]]
+name = "lit-frost-redpallas"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b60db58815ed4ad59dc8bcd31cc8dea9e545df775a4719f3b1898f9f926c7c83"
+dependencies = [
+ "blake2b_simd 1.0.3",
+ "document-features",
+ "group",
+ "lit-frost-core",
+ "lit-frost-rerandomized",
+ "pasta_curves_plus",
+ "rand_core",
+]
+
+[[package]]
+name = "lit-frost-rerandomized"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7e97bad42b728aad637e6bae6ae011d8594a76837927549606f2af12c4486a6"
+dependencies = [
+ "derive-getters",
+ "document-features",
+ "lit-frost-core",
+ "rand_core",
+]
+
+[[package]]
+name = "lit-frost-ristretto255"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "90f121a27bf1b495f0bcbb487942bf912b88150fa1b26487996582137d2cbf36"
+dependencies = [
+ "curve25519-dalek-ml",
+ "document-features",
+ "lit-frost-core",
+ "lit-frost-rerandomized",
+ "rand_core",
+ "sha2",
+]
+
+[[package]]
+name = "lit-frost-schnorrkel25519"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cc1fcb9a425ed428e7a52192c9a7f6033ac806ee08daeaceed1685714a694a5"
+dependencies = [
+ "byte-strings",
+ "curve25519-dalek-ml",
+ "lit-frost-core",
+ "lit-frost-rerandomized",
+ "merlin",
+ "rand_core",
+ "schnorrkel",
+]
+
+[[package]]
+name = "lit-frost-secp256k1"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f059659fcf8e4b7525af7090322e873129ac097a77ba861b9725e3a9ed5c0ff1"
+dependencies = [
+ "document-features",
+ "k256",
+ "lit-frost-core",
+ "lit-frost-rerandomized",
+ "rand_core",
+ "sha2",
+]
+
+[[package]]
+name = "lit-frost-taproot"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c761de128c2518817a8fe4853a9084695de3ef4afde9924d0a856efa9d0a6e0"
+dependencies = [
+ "document-features",
+ "k256",
+ "lit-frost-core",
+ "lit-frost-rerandomized",
+ "rand_core",
+ "sha2",
+ "signature",
+]
+
+[[package]]
+name = "lit-p384"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db0a31788e4ccae58f1ee8f6a9f0b354719f5de30cf125062805f6abc6f25e8d"
+dependencies = [
+ "ecdsa",
+ "elliptic-curve",
+ "primeorder",
+ "sha2",
+]
+
+[[package]]
 name = "lit-rust-crypto"
 version = "0.6.0"
-source = "git+https://github.com/LIT-Protocol/lit-rust-crypto?tag=0.6.0#9548fce521473f289ea1366249b782355e96507d"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3c14417f51ca7213ea4f50e59bd47e1b55b67c759fad8e6e44fadc3c6aa2bc9"
 dependencies = [
- "bls12_381_plus",
  "blsful",
  "blstrs_plus",
  "curve25519-dalek-ml",
  "decaf377_plus",
- "ed448-goldilocks-plus",
+ "ed448-goldilocks-plus 0.16.0",
  "elliptic-curve",
  "jubjub-plus",
  "k256",
  "p256",
- "p384 0.13.1",
+ "p384",
  "pasta_curves_plus",
  "vsss-rs",
 ]
@@ -1586,19 +1624,7 @@ checksum = "c9863ad85fa8f4460f9c48cb909d38a0d689dba1f6f6988a5e3e0d31071bcd4b"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
- "primeorder 0.13.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "serdect 0.2.0",
- "sha2",
-]
-
-[[package]]
-name = "p384"
-version = "0.13.0"
-source = "git+https://github.com/LIT-Protocol/elliptic-curves.git#67924afc93d236e1508afd5f55bbf738e1c41eaa"
-dependencies = [
- "ecdsa",
- "elliptic-curve",
- "primeorder 0.13.6 (git+https://github.com/LIT-Protocol/elliptic-curves.git)",
+ "primeorder",
  "sha2",
 ]
 
@@ -1610,8 +1636,7 @@ checksum = "fe42f1670a52a47d448f14b6a5c61dd78fce51856e68edaa38f7ae3a46b8d6b6"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
- "primeorder 0.13.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "serdect 0.2.0",
+ "primeorder",
  "sha2",
 ]
 
@@ -1721,15 +1746,6 @@ name = "primeorder"
 version = "0.13.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "353e1ca18966c16d9deb1c69278edbc5f194139612772bd9537af60ac231e1e6"
-dependencies = [
- "elliptic-curve",
- "serdect 0.2.0",
-]
-
-[[package]]
-name = "primeorder"
-version = "0.13.6"
-source = "git+https://github.com/LIT-Protocol/elliptic-curves.git#67924afc93d236e1508afd5f55bbf738e1c41eaa"
 dependencies = [
  "elliptic-curve",
 ]
@@ -1894,7 +1910,7 @@ dependencies = [
  "regex",
  "relative-path",
  "rustc_version",
- "syn 2.0.110",
+ "syn 2.0.111",
  "unicode-ident",
 ]
 
@@ -2011,7 +2027,7 @@ checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 2.0.111",
 ]
 
 [[package]]
@@ -2133,7 +2149,7 @@ version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "227c4f8561598188d0df96dbe749824576174bba278b5b6bb2eacff1066067d0"
 dependencies = [
- "hashbrown 0.16.0",
+ "hashbrown 0.16.1",
  "rustversion",
  "spin 0.10.0",
 ]
@@ -2157,9 +2173,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.110"
+version = "2.0.111"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a99801b5bd34ede4cf3fc688c5919368fea4e4814a4664359503e6015b280aea"
+checksum = "390cc9a294ab71bdb1aa2e99d13be9c753cd2d7bd6560c77118597410c4d2e87"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2198,7 +2214,7 @@ checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 2.0.111",
 ]
 
 [[package]]
@@ -2209,27 +2225,7 @@ checksum = "3ff15c8ecd7de3849db632e14d18d2571fa09dfc5ed93479bc4485c7a517c913"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
-]
-
-[[package]]
-name = "thiserror-nostd-notrait"
-version = "1.0.57"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8444e638022c44d2a9337031dee8acb732bcc7fbf52ac654edc236b26408b61"
-dependencies = [
- "thiserror-nostd-notrait-impl",
-]
-
-[[package]]
-name = "thiserror-nostd-notrait-impl"
-version = "1.0.57"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "585e5ef40a784ce60b49c67d762110688d211d395d39e096be204535cf64590e"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.110",
+ "syn 2.0.111",
 ]
 
 [[package]]
@@ -2243,18 +2239,18 @@ dependencies = [
 
 [[package]]
 name = "toml_datetime"
-version = "0.7.3"
+version = "0.7.5+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2cdb639ebbc97961c51720f858597f7f24c4fc295327923af55b74c3c724533"
+checksum = "92e1cfed4a3038bc5a127e35a2d360f145e1f4b971b551a2ba5fd7aedf7e1347"
 dependencies = [
  "serde_core",
 ]
 
 [[package]]
 name = "toml_edit"
-version = "0.23.7"
+version = "0.23.10+spec-1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6485ef6d0d9b5d0ec17244ff7eb05310113c3f316f2d14200d4de56b3cb98f8d"
+checksum = "84c8b9f757e028cee9fa244aea147aab2a9ec09d5325a9b01e0a49730c2b5269"
 dependencies = [
  "indexmap",
  "toml_datetime",
@@ -2264,9 +2260,9 @@ dependencies = [
 
 [[package]]
 name = "toml_parser"
-version = "1.0.4"
+version = "1.0.6+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0cbe268d35bdb4bb5a56a2de88d0ad0eb70af5384a99d648cd4b3d04039800e"
+checksum = "a3198b4b0a8e11f09dd03e133c0280504d0801269e9afa46362ffde1cbeebf44"
 dependencies = [
  "winnow",
 ]
@@ -2306,7 +2302,7 @@ checksum = "d674d135b4a8c1d7e813e2f8d1c9a58308aee4a680323066025e53132218bd91"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 2.0.111",
 ]
 
 [[package]]
@@ -2337,9 +2333,9 @@ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
 
 [[package]]
 name = "wasm-bindgen"
-version = "0.2.105"
+version = "0.2.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da95793dfc411fbbd93f5be7715b0578ec61fe87cb1a42b12eb625caa5c5ea60"
+checksum = "0d759f433fa64a2d763d1340820e46e111a7a5ab75f993d1852d70b03dbb80fd"
 dependencies = [
  "cfg-if",
  "once_cell",
@@ -2350,9 +2346,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro"
-version = "0.2.105"
+version = "0.2.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04264334509e04a7bf8690f2384ef5265f05143a4bff3889ab7a3269adab59c2"
+checksum = "48cb0d2638f8baedbc542ed444afc0644a29166f1595371af4fecf8ce1e7eeb3"
 dependencies = [
  "quote",
  "wasm-bindgen-macro-support",
@@ -2360,31 +2356,31 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro-support"
-version = "0.2.105"
+version = "0.2.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "420bc339d9f322e562942d52e115d57e950d12d88983a14c79b86859ee6c7ebc"
+checksum = "cefb59d5cd5f92d9dcf80e4683949f15ca4b511f4ac0a6e14d4e1ac60c6ecd40"
 dependencies = [
  "bumpalo",
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 2.0.111",
  "wasm-bindgen-shared",
 ]
 
 [[package]]
 name = "wasm-bindgen-shared"
-version = "0.2.105"
+version = "0.2.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76f218a38c84bcb33c25ec7059b07847d465ce0e0a76b995e134a45adcb6af76"
+checksum = "cbc538057e648b67f72a982e708d485b2efa771e1ac05fec311f9f63e5800db4"
 dependencies = [
  "unicode-ident",
 ]
 
 [[package]]
 name = "winnow"
-version = "0.7.13"
+version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21a0236b59786fed61e2a80582dd500fe61f18b5dca67a4a067d0bc9039339cf"
+checksum = "5a5364e9d77fcdeeaa6062ced926ee3381faa2ee02d3eb83a5c27a8825540829"
 dependencies = [
  "memchr",
 ]
@@ -2400,22 +2396,22 @@ dependencies = [
 
 [[package]]
 name = "zerocopy"
-version = "0.8.27"
+version = "0.8.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0894878a5fa3edfd6da3f88c4805f4c8558e2b996227a3d864f47fe11e38282c"
+checksum = "fd74ec98b9250adb3ca554bdde269adf631549f51d8a8f8f0a10b50f1cb298c3"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.8.27"
+version = "0.8.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88d2b8d9c68ad2b9e4340d7832716a4d21a22a1154777ad56ea55c51a9cf3831"
+checksum = "d8a8d209fdf45cf5138cbb5a506f6b52522a25afccc534d1475dad8e31105c6a"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 2.0.111",
 ]
 
 [[package]]
@@ -2435,5 +2431,5 @@ checksum = "ce36e65b0d2999d2aafac989fb249189a141aee1f53c612c1f37d72631959f69"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.110",
+ "syn 2.0.111",
 ]

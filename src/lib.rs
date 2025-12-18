@@ -853,24 +853,14 @@ fn aggregate<C: Ciphersuite>(
         return Err(Error::General("Error aggregating signature".to_string()));
     }
 
-    let mut cheaters = Vec::new();
-    let res = frost_core::aggregate_report_all_cheaters::<C>(
-        &signing_package,
-        &signature_shares_map,
-        &pubkey_package,
-        &mut cheaters,
-    );
-    let signature = match res {
-        Ok(s) => s,
-        Err(e) => match e {
-            frost_core::Error::InvalidSignatureShare { culprit: _ } => {
-                return Err(Error::Cheaters(
-                    cheaters.into_iter().map(|i| i.into()).collect(),
-                ));
-            }
-            ee => return Err(ee.into()),
-        },
-    };
+    let signature =
+        frost_core::aggregate::<C>(&signing_package, &signature_shares_map, &pubkey_package)
+            .map_err(|e| match e {
+                frost_core::Error::InvalidSignatureShare { culprit } => {
+                    Error::Cheaters(vec![culprit.into()])
+                }
+                ee => ee.into(),
+            })?;
     Ok(signature.into())
 }
 
@@ -1058,7 +1048,8 @@ mod tests {
         assert!(res.is_err());
         match res.unwrap_err() {
             Error::Cheaters(cheaters) => {
-                assert_eq!(cheaters.len(), 2);
+                // The new frost_core API only reports one culprit at a time
+                assert_eq!(cheaters.len(), 1);
             }
             e => assert!(false, "Unexpected error: {:?}", e),
         }

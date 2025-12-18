@@ -22,7 +22,7 @@ impl<C: Ciphersuite> From<frost_core::VerifyingKey<C>> for VerifyingKey {
 
 impl<C: Ciphersuite> From<&frost_core::VerifyingKey<C>> for VerifyingKey {
     fn from(s: &frost_core::VerifyingKey<C>) -> Self {
-        let value = s.serialize().expect("a byte sequence");
+        let value = s.serialize().as_ref().to_vec();
         let scheme = C::ID.parse::<Scheme>().expect("Unknown ciphersuite");
         Self { scheme, value }
     }
@@ -40,7 +40,12 @@ impl<C: Ciphersuite> TryFrom<&VerifyingKey> for frost_core::VerifyingKey<C> {
                 "Ciphersuite does not match verifying key".to_string(),
             ));
         }
-        frost_core::VerifyingKey::<C>::deserialize(value.value.as_slice())
+        let bytes: <C::Group as frost_core::Group>::Serialization = value
+            .value
+            .clone()
+            .try_into()
+            .map_err(|_| Error::General("Invalid verifying key length".to_string()))?;
+        frost_core::VerifyingKey::<C>::deserialize(bytes)
             .map_err(|_| Error::General("Error deserializing verifying key".to_string()))
     }
 }

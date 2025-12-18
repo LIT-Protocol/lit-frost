@@ -20,7 +20,7 @@ impl<C: Ciphersuite> From<frost_core::keys::VerifyingShare<C>> for VerifyingShar
 
 impl<C: Ciphersuite> From<&frost_core::keys::VerifyingShare<C>> for VerifyingShare {
     fn from(s: &frost_core::keys::VerifyingShare<C>) -> Self {
-        let value = s.serialize().expect("serialize to bytes");
+        let value = s.serialize().as_ref().to_vec();
         let scheme = C::ID.parse::<Scheme>().expect("Unknown ciphersuite");
         Self { scheme, value }
     }
@@ -42,7 +42,12 @@ impl<C: Ciphersuite> TryFrom<&VerifyingShare> for frost_core::keys::VerifyingSha
         //     <C::Group as Group>::Serialization::try_from(value.value.to_vec()).map_err(|_| {
         //         Error::General("Error converting verifying share from bytes".to_string())
         //     })?;
-        frost_core::keys::VerifyingShare::<C>::deserialize(value.value.as_slice())
+        let bytes: <C::Group as frost_core::Group>::Serialization = value
+            .value
+            .clone()
+            .try_into()
+            .map_err(|_| Error::General("Invalid verifying share length".to_string()))?;
+        frost_core::keys::VerifyingShare::<C>::deserialize(bytes)
             .map_err(|_| Error::General("Error deserializing verifying share".to_string()))
     }
 }

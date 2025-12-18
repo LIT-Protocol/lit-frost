@@ -25,7 +25,7 @@ impl<C: Ciphersuite> From<&frost_core::Signature<C>> for Signature {
         let scheme = C::ID.parse().expect("Unknown ciphersuite");
         Self {
             scheme,
-            value: s.serialize().expect("serialize to bytes"),
+            value: s.serialize().as_ref().to_vec(),
         }
     }
 }
@@ -56,7 +56,10 @@ impl<C: Ciphersuite> TryFrom<&Signature> for frost_core::Signature<C> {
             }
             _ => {}
         }
-        frost_core::Signature::<C>::deserialize(value.as_slice())
+        let bytes: C::SignatureSerialization = value
+            .try_into()
+            .map_err(|_| Error::General("Invalid signature length".to_string()))?;
+        frost_core::Signature::<C>::deserialize(bytes)
             .map_err(|_| Error::General("Error deserializing signature".to_string()))
     }
 }
@@ -97,7 +100,7 @@ mod tests {
             let pt = C::Group::generator()
                 * <<<C as Ciphersuite>::Group as Group>::Field as Field>::random(&mut rng);
             let share = <<<C as Ciphersuite>::Group as Group>::Field as Field>::random(&mut rng);
-            let mut value = C::Group::serialize(&pt).unwrap().as_ref().to_vec();
+            let mut value = C::Group::serialize(&pt).as_ref().to_vec();
             value.extend_from_slice(
                 <<<C as Ciphersuite>::Group as Group>::Field as Field>::serialize(&share).as_ref(),
             );
@@ -131,7 +134,7 @@ mod tests {
             let pt = C::Group::generator()
                 * <<<C as Ciphersuite>::Group as Group>::Field as Field>::random(&mut rng);
             let share = <<<C as Ciphersuite>::Group as Group>::Field as Field>::random(&mut rng);
-            let mut value = C::Group::serialize(&pt).unwrap().as_ref().to_vec();
+            let mut value = C::Group::serialize(&pt).as_ref().to_vec();
             value.extend_from_slice(
                 <<<C as Ciphersuite>::Group as Group>::Field as Field>::serialize(&share).as_ref(),
             );

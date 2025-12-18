@@ -33,8 +33,8 @@ impl<C: Ciphersuite> From<&frost_core::round1::SigningNonces<C>> for SigningNonc
         let scheme = C::ID.parse().expect("Unknown ciphersuite");
         Self {
             scheme,
-            hiding: s.hiding().serialize(),
-            binding: s.binding().serialize(),
+            hiding: s.hiding().serialize().as_ref().to_vec(),
+            binding: s.binding().serialize().as_ref().to_vec(),
         }
     }
 }
@@ -51,9 +51,17 @@ impl<C: Ciphersuite> TryFrom<&SigningNonces> for frost_core::round1::SigningNonc
                 "Ciphersuite does not match signing nonces".to_string(),
             ));
         }
-        let hiding = frost_core::round1::Nonce::<C>::deserialize(value.hiding.as_slice())
+        let hiding_bytes: <<C::Group as frost_core::Group>::Field as frost_core::Field>::Serialization =
+            value.hiding.clone()
+                .try_into()
+                .map_err(|_| Error::General("Invalid hiding nonce length".to_string()))?;
+        let hiding = frost_core::round1::Nonce::<C>::deserialize(hiding_bytes)
             .map_err(|_| Error::General("Error deserializing hiding nonce".to_string()))?;
-        let binding = frost_core::round1::Nonce::<C>::deserialize(value.binding.as_slice())
+        let binding_bytes: <<C::Group as frost_core::Group>::Field as frost_core::Field>::Serialization =
+            value.binding.clone()
+                .try_into()
+                .map_err(|_| Error::General("Invalid binding nonce length".to_string()))?;
+        let binding = frost_core::round1::Nonce::<C>::deserialize(binding_bytes)
             .map_err(|_| Error::General("Error deserializing binding nonce".to_string()))?;
         let signing_nonces = frost_core::round1::SigningNonces::<C>::from_nonces(hiding, binding);
         Ok(signing_nonces)

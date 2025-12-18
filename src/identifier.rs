@@ -76,51 +76,10 @@ impl<C: Ciphersuite> From<frost_core::Identifier<C>> for Identifier {
 
 impl<C: Ciphersuite> From<&frost_core::Identifier<C>> for Identifier {
     fn from(s: &frost_core::Identifier<C>) -> Self {
-        match C::ID.parse().expect("Unknown ciphersuite") {
-            Scheme::Ed25519Sha512 => Self {
-                scheme: Scheme::Ed25519Sha512,
-                id: s.serialize(),
-            },
-            Scheme::Ed448Shake256 => Self {
-                scheme: Scheme::Ed448Shake256,
-                id: s.serialize(),
-            },
-            Scheme::Ristretto25519Sha512 => Self {
-                scheme: Scheme::Ristretto25519Sha512,
-                id: s.serialize(),
-            },
-            Scheme::K256Sha256 => Self {
-                scheme: Scheme::K256Sha256,
-                id: s.serialize(),
-            },
-            Scheme::P256Sha256 => Self {
-                scheme: Scheme::P256Sha256,
-                id: s.serialize(),
-            },
-            Scheme::P384Sha384 => Self {
-                scheme: Scheme::P384Sha384,
-                id: s.serialize(),
-            },
-            Scheme::RedJubjubBlake2b512 => Self {
-                scheme: Scheme::RedJubjubBlake2b512,
-                id: s.serialize(),
-            },
-            Scheme::K256Taproot => Self {
-                scheme: Scheme::K256Taproot,
-                id: s.serialize(),
-            },
-            Scheme::RedDecaf377Blake2b512 => Self {
-                scheme: Scheme::RedDecaf377Blake2b512,
-                id: s.serialize(),
-            },
-            Scheme::SchnorrkelSubstrate => Self {
-                scheme: Scheme::SchnorrkelSubstrate,
-                id: s.serialize(),
-            },
-            Scheme::RedPallasBlake2b512 => Self {
-                scheme: Scheme::RedPallasBlake2b512,
-                id: s.serialize(),
-            },
+        let scheme = C::ID.parse().expect("Unknown ciphersuite");
+        Self {
+            scheme,
+            id: s.serialize().as_ref().to_vec(),
         }
     }
 }
@@ -141,7 +100,11 @@ impl<C: Ciphersuite> TryFrom<&Identifier> for frost_core::Identifier<C> {
             .parse::<Scheme>()
             .map_err(|_| Error::General("Unknown ciphersuite".to_string()))?;
         if scheme == s.scheme {
-            let id = frost_core::Identifier::deserialize(s.id.as_slice())
+            let bytes: <<C::Group as frost_core::Group>::Field as frost_core::Field>::Serialization =
+                s.id.clone()
+                    .try_into()
+                    .map_err(|_| Error::General("Invalid identifier length".to_string()))?;
+            let id = frost_core::Identifier::deserialize(&bytes)
                 .map_err(|_| Error::General("Invalid identifier".to_string()))?;
             Ok(id)
         } else {

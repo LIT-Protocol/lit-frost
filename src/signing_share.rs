@@ -26,7 +26,7 @@ impl<C: Ciphersuite> From<&frost_core::keys::SigningShare<C>> for SigningShare {
         let scheme = C::ID.parse().expect("Unknown ciphersuite");
         Self {
             scheme,
-            value: s.serialize(),
+            value: s.serialize().as_ref().to_vec(),
         }
     }
 }
@@ -40,7 +40,13 @@ impl<C: Ciphersuite> TryFrom<&SigningShare> for frost_core::keys::SigningShare<C
                 "Signing share scheme does not match ciphersuite".to_string(),
             ));
         }
-        frost_core::keys::SigningShare::<C>::deserialize(value.value.as_slice())
+        let bytes: <<C::Group as frost_core::Group>::Field as frost_core::Field>::Serialization =
+            value
+                .value
+                .clone()
+                .try_into()
+                .map_err(|_| Error::General("Invalid signing share length".to_string()))?;
+        frost_core::keys::SigningShare::<C>::deserialize(bytes)
             .map_err(|_| Error::General("Error converting signing share".to_string()))
     }
 }

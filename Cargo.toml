@@ -12,18 +12,18 @@ anyhow = "1.0"
 ark-serialize = "0.4"
 decaf377-rdsa = { version = "0.11.0" }
 ed25519-dalek = "2.1"
-frost-core = { features = ["internals"], git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
-frost-decaf377 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
-frost-ed25519 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
-frost-ed448 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
-frost-p256 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
-frost-p384 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
-frost-redpallas = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
-frost-redjubjub = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
-frost-ristretto255 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
-frost-secp256k1 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
-frost-schnorrkel25519 = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
-frost-taproot = { git = "https://github.com/LIT-Protocol/frost.git", branch = "2.2.0" }
+frost-core = { version = "1.0.0", features = ["internals"], package = "lit-frost-core" }
+frost-decaf377 = { version = "1.0.0", package = "lit-frost-decaf377" }
+frost-ed25519 = { version = "1.0.0", package = "lit-frost-ed25519" }
+frost-ed448 = { version = "1.0.0", package = "lit-frost-ed448" }
+frost-p256 = { version = "1.0.0", package = "lit-frost-p256" }
+frost-p384 = { version = "1.0.0", package = "lit-frost-p384" }
+frost-redpallas = { version = "1.0.0", package = "lit-frost-redpallas" }
+frost-redjubjub = { version = "1.0.0", package = "lit-frost-redjubjub" }
+frost-ristretto255 = { version = "1.0.0", package = "lit-frost-ristretto255" }
+frost-secp256k1 = { version = "1.0.0", package = "lit-frost-secp256k1" }
+frost-schnorrkel25519 = { version = "1.0.0", package = "lit-frost-schnorrkel25519" }
+frost-taproot = { version = "1.0.0", package = "lit-frost-taproot" }
 hex = "0.4"
 rand_core = "0.6"
 reddsa = "0.5"
@@ -36,8 +36,7 @@ thiserror = "2.0"
 zeroize = "1.8"
 
 [dependencies.lit-rust-crypto]
-git = "https://github.com/LIT-Protocol/lit-rust-crypto"
-tag = "0.6.0"
+version = "0.6.0"
 features = [
     "blst",
     "curve25519-dalek-default",
