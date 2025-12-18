@@ -1,7 +1,17 @@
 [package]
-name = "lit-frost"
-version = "0.4.0"
+authors = ["LIT Protocol Developers"]
+categories = ["cryptography"]
+description = "Compatibility library for the Frost signing protocol across multiple curves"
+documentation = "https://docs.rs/lit-frost"
 edition = "2024"
+exclude = ["tests/**", "benches/**", "examples/**", ".github/**"]
+homepage = "https://crates.io/crates/lit-frost"
+keywords = ["dkg", "key", "generation", "distributed", "frost"]
+license = "Apache-2.0 OR MIT"
+name = "lit-frost"
+readme = "README.md"
+repository = "https://github.com/LIT-Protocol/lit-frost"
+version = "0.4.0"
 
 [features]
 default = []
